@@ -1,3 +1,14 @@
-import * as bcrypt from "./types.js";
-export * from "./types.js";
-export default bcrypt;
+/**
+List of binary file extensions.
+
+@example
+```
+import binaryExtensions = require('binary-extensions');
+
+console.log(binaryExtensions);
+//=> ['3ds', '3g2', …]
+```
+*/
+declare const binaryExtensions: readonly string[];
+
+export = binaryExtensions;
