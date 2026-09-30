@@ -1,6 +1,4 @@
-'use strict';
-
-var fs = require('fs');
+import { readFileSync } from 'fs';
 
 /**
  * @license
@@ -326,7 +324,7 @@ class GoogleAIFileManager {
      * Upload a file.
      */
     async uploadFile(fileData, fileMetadata) {
-        const file = fileData instanceof Buffer ? fileData : fs.readFileSync(fileData);
+        const file = fileData instanceof Buffer ? fileData : readFileSync(fileData);
         const url = new FilesRequestUrl(RpcTask.UPLOAD, this.apiKey, this._requestOptions);
         const uploadHeaders = getHeaders(url);
         const boundary = generateBoundary();
@@ -597,7 +595,7 @@ function camelToSnake(str) {
  * Processing state of the `File`.
  * @public
  */
-exports.FileState = void 0;
+var FileState;
 (function (FileState) {
     // The default value. This value is used if the state is omitted.
     FileState["STATE_UNSPECIFIED"] = "STATE_UNSPECIFIED";
@@ -607,14 +605,14 @@ exports.FileState = void 0;
     FileState["ACTIVE"] = "ACTIVE";
     // File failed processing.
     FileState["FAILED"] = "FAILED";
-})(exports.FileState || (exports.FileState = {}));
+})(FileState || (FileState = {}));
 
 /**
  * Contains the list of OpenAPI data types
  * as defined by https://swagger.io/docs/specification/data-models/data-types/
  * @public
  */
-exports.SchemaType = void 0;
+var SchemaType;
 (function (SchemaType) {
     /** String type. */
     SchemaType["STRING"] = "string";
@@ -628,7 +626,7 @@ exports.SchemaType = void 0;
     SchemaType["ARRAY"] = "array";
     /** Object type. */
     SchemaType["OBJECT"] = "object";
-})(exports.SchemaType || (exports.SchemaType = {}));
+})(SchemaType || (SchemaType = {}));
 
 /**
  * @license
@@ -649,16 +647,16 @@ exports.SchemaType = void 0;
 /**
  * @public
  */
-exports.ExecutableCodeLanguage = void 0;
+var ExecutableCodeLanguage;
 (function (ExecutableCodeLanguage) {
     ExecutableCodeLanguage["LANGUAGE_UNSPECIFIED"] = "language_unspecified";
     ExecutableCodeLanguage["PYTHON"] = "python";
-})(exports.ExecutableCodeLanguage || (exports.ExecutableCodeLanguage = {}));
+})(ExecutableCodeLanguage || (ExecutableCodeLanguage = {}));
 /**
  * Possible outcomes of code execution.
  * @public
  */
-exports.Outcome = void 0;
+var Outcome;
 (function (Outcome) {
     /**
      * Unspecified status. This value should not be used.
@@ -678,7 +676,7 @@ exports.Outcome = void 0;
      * be a partial output present.
      */
     Outcome["OUTCOME_DEADLINE_EXCEEDED"] = "outcome_deadline_exceeded";
-})(exports.Outcome || (exports.Outcome = {}));
+})(Outcome || (Outcome = {}));
 
 /**
  * @license
@@ -805,7 +803,7 @@ var TaskType;
 /**
  * @public
  */
-exports.FunctionCallingMode = void 0;
+var FunctionCallingMode;
 (function (FunctionCallingMode) {
     // Unspecified function calling mode. This value should not be used.
     FunctionCallingMode["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
@@ -820,7 +818,7 @@ exports.FunctionCallingMode = void 0;
     // Model will not predict any function call. Model behavior is same as when
     // not passing any function declarations.
     FunctionCallingMode["NONE"] = "NONE";
-})(exports.FunctionCallingMode || (exports.FunctionCallingMode = {}));
+})(FunctionCallingMode || (FunctionCallingMode = {}));
 /**
  * The mode of the predictor to be used in dynamic retrieval.
  * @public
@@ -833,6 +831,5 @@ var DynamicRetrievalMode;
     DynamicRetrievalMode["MODE_DYNAMIC"] = "MODE_DYNAMIC";
 })(DynamicRetrievalMode || (DynamicRetrievalMode = {}));
 
-exports.GoogleAICacheManager = GoogleAICacheManager;
-exports.GoogleAIFileManager = GoogleAIFileManager;
-//# sourceMappingURL=index.js.map
+export { ExecutableCodeLanguage, FileState, FunctionCallingMode, GoogleAICacheManager, GoogleAIFileManager, Outcome, SchemaType };
+//# sourceMappingURL=index.mjs.map
