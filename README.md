@@ -1,317 +1,277 @@
-# cookie
+# cors
 
-[![NPM Version][npm-version-image]][npm-url]
-[![NPM Downloads][npm-downloads-image]][npm-url]
-[![Node.js Version][node-image]][node-url]
-[![Build Status][ci-image]][ci-url]
-[![Coverage Status][coveralls-image]][coveralls-url]
+[![NPM Version][npm-image]][npm-url]
+[![NPM Downloads][downloads-image]][downloads-url]
+[![Build Status][github-actions-ci-image]][github-actions-ci-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
 
-Basic HTTP cookie parser and serializer for HTTP servers.
+CORS is a [Node.js](https://nodejs.org/en/) middleware for [Express](https://expressjs.com/)/[Connect](https://github.com/senchalabs/connect) that sets [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) response headers. These headers tell browsers which origins can read responses from your server.
+
+> [!IMPORTANT]
+> **How CORS Works:** This package sets response headers—it doesn't block requests. CORS is enforced by browsers: they check the headers and decide if JavaScript can read the response. Non-browser clients (curl, Postman, other servers) ignore CORS entirely. See the [MDN CORS guide](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) for details.
+
+* [Installation](#installation)
+* [Usage](#usage)
+  * [Simple Usage](#simple-usage-enable-all-cors-requests)
+  * [Enable CORS for a Single Route](#enable-cors-for-a-single-route)
+  * [Configuring CORS](#configuring-cors)
+  * [Configuring CORS w/ Dynamic Origin](#configuring-cors-w-dynamic-origin)
+  * [Enabling CORS Pre-Flight](#enabling-cors-pre-flight)
+  * [Customizing CORS Settings Dynamically per Request](#customizing-cors-settings-dynamically-per-request)
+* [Configuration Options](#configuration-options)
+* [Common Misconceptions](#common-misconceptions)
+* [License](#license)
+* [Original Author](#original-author)
 
 ## Installation
 
 This is a [Node.js](https://nodejs.org/en/) module available through the
 [npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+[`npm install` command](https://docs.npmjs.com/downloading-and-installing-packages-locally):
 
 ```sh
-$ npm install cookie
+$ npm install cors
 ```
 
-## API
+## Usage
 
-```js
-var cookie = require('cookie');
+### Simple Usage (Enable *All* CORS Requests)
+
+```javascript
+var express = require('express')
+var cors = require('cors')
+var app = express()
+
+// Adds headers: Access-Control-Allow-Origin: *
+app.use(cors())
+
+app.get('/products/:id', function (req, res, next) {
+  res.json({msg: 'Hello'})
+})
+
+app.listen(80, function () {
+  console.log('web server listening on port 80')
+})
 ```
 
-### cookie.parse(str, options)
+### Enable CORS for a Single Route
 
-Parse an HTTP `Cookie` header string and returning an object of all cookie name-value pairs.
-The `str` argument is the string representing a `Cookie` header value and `options` is an
-optional object containing additional parsing options.
+```javascript
+var express = require('express')
+var cors = require('cors')
+var app = express()
 
-```js
-var cookies = cookie.parse('foo=bar; equation=E%3Dmc%5E2');
-// { foo: 'bar', equation: 'E=mc^2' }
+// Adds headers: Access-Control-Allow-Origin: *
+app.get('/products/:id', cors(), function (req, res, next) {
+  res.json({msg: 'Hello'})
+})
+
+app.listen(80, function () {
+  console.log('web server listening on port 80')
+})
 ```
 
-#### Options
+### Configuring CORS
 
-`cookie.parse` accepts these properties in the options object.
+See the [configuration options](#configuration-options) for details.
 
-##### decode
+```javascript
+var express = require('express')
+var cors = require('cors')
+var app = express()
 
-Specifies a function that will be used to decode a cookie's value. Since the value of a cookie
-has a limited character set (and must be a simple string), this function can be used to decode
-a previously-encoded cookie value into a JavaScript string or other object.
-
-The default function is the global `decodeURIComponent`, which will decode any URL-encoded
-sequences into their byte representations.
-
-**note** if an error is thrown from this function, the original, non-decoded cookie value will
-be returned as the cookie's value.
-
-### cookie.serialize(name, value, options)
-
-Serialize a cookie name-value pair into a `Set-Cookie` header string. The `name` argument is the
-name for the cookie, the `value` argument is the value to set the cookie to, and the `options`
-argument is an optional object containing additional serialization options.
-
-```js
-var setCookie = cookie.serialize('foo', 'bar');
-// foo=bar
-```
-
-#### Options
-
-`cookie.serialize` accepts these properties in the options object.
-
-##### domain
-
-Specifies the value for the [`Domain` `Set-Cookie` attribute][rfc-6265-5.2.3]. By default, no
-domain is set, and most clients will consider the cookie to apply to only the current domain.
-
-##### encode
-
-Specifies a function that will be used to encode a cookie's value. Since value of a cookie
-has a limited character set (and must be a simple string), this function can be used to encode
-a value into a string suited for a cookie's value.
-
-The default function is the global `encodeURIComponent`, which will encode a JavaScript string
-into UTF-8 byte sequences and then URL-encode any that fall outside of the cookie range.
-
-##### expires
-
-Specifies the `Date` object to be the value for the [`Expires` `Set-Cookie` attribute][rfc-6265-5.2.1].
-By default, no expiration is set, and most clients will consider this a "non-persistent cookie" and
-will delete it on a condition like exiting a web browser application.
-
-**note** the [cookie storage model specification][rfc-6265-5.3] states that if both `expires` and
-`maxAge` are set, then `maxAge` takes precedence, but it is possible not all clients by obey this,
-so if both are set, they should point to the same date and time.
-
-##### httpOnly
-
-Specifies the `boolean` value for the [`HttpOnly` `Set-Cookie` attribute][rfc-6265-5.2.6]. When truthy,
-the `HttpOnly` attribute is set, otherwise it is not. By default, the `HttpOnly` attribute is not set.
-
-**note** be careful when setting this to `true`, as compliant clients will not allow client-side
-JavaScript to see the cookie in `document.cookie`.
-
-##### maxAge
-
-Specifies the `number` (in seconds) to be the value for the [`Max-Age` `Set-Cookie` attribute][rfc-6265-5.2.2].
-The given number will be converted to an integer by rounding down. By default, no maximum age is set.
-
-**note** the [cookie storage model specification][rfc-6265-5.3] states that if both `expires` and
-`maxAge` are set, then `maxAge` takes precedence, but it is possible not all clients by obey this,
-so if both are set, they should point to the same date and time.
-
-##### partitioned
-
-Specifies the `boolean` value for the [`Partitioned` `Set-Cookie`](rfc-cutler-httpbis-partitioned-cookies)
-attribute. When truthy, the `Partitioned` attribute is set, otherwise it is not. By default, the
-`Partitioned` attribute is not set.
-
-**note** This is an attribute that has not yet been fully standardized, and may change in the future.
-This also means many clients may ignore this attribute until they understand it.
-
-More information about can be found in [the proposal](https://github.com/privacycg/CHIPS).
-
-##### path
-
-Specifies the value for the [`Path` `Set-Cookie` attribute][rfc-6265-5.2.4]. By default, the path
-is considered the ["default path"][rfc-6265-5.1.4].
-
-##### priority
-
-Specifies the `string` to be the value for the [`Priority` `Set-Cookie` attribute][rfc-west-cookie-priority-00-4.1].
-
-  - `'low'` will set the `Priority` attribute to `Low`.
-  - `'medium'` will set the `Priority` attribute to `Medium`, the default priority when not set.
-  - `'high'` will set the `Priority` attribute to `High`.
-
-More information about the different priority levels can be found in
-[the specification][rfc-west-cookie-priority-00-4.1].
-
-**note** This is an attribute that has not yet been fully standardized, and may change in the future.
-This also means many clients may ignore this attribute until they understand it.
-
-##### sameSite
-
-Specifies the `boolean` or `string` to be the value for the [`SameSite` `Set-Cookie` attribute][rfc-6265bis-09-5.4.7].
-
-  - `true` will set the `SameSite` attribute to `Strict` for strict same site enforcement.
-  - `false` will not set the `SameSite` attribute.
-  - `'lax'` will set the `SameSite` attribute to `Lax` for lax same site enforcement.
-  - `'none'` will set the `SameSite` attribute to `None` for an explicit cross-site cookie.
-  - `'strict'` will set the `SameSite` attribute to `Strict` for strict same site enforcement.
-
-More information about the different enforcement levels can be found in
-[the specification][rfc-6265bis-09-5.4.7].
-
-**note** This is an attribute that has not yet been fully standardized, and may change in the future.
-This also means many clients may ignore this attribute until they understand it.
-
-##### secure
-
-Specifies the `boolean` value for the [`Secure` `Set-Cookie` attribute][rfc-6265-5.2.5]. When truthy,
-the `Secure` attribute is set, otherwise it is not. By default, the `Secure` attribute is not set.
-
-**note** be careful when setting this to `true`, as compliant clients will not send the cookie back to
-the server in the future if the browser does not have an HTTPS connection.
-
-## Example
-
-The following example uses this module in conjunction with the Node.js core HTTP server
-to prompt a user for their name and display it back on future visits.
-
-```js
-var cookie = require('cookie');
-var escapeHtml = require('escape-html');
-var http = require('http');
-var url = require('url');
-
-function onRequest(req, res) {
-  // Parse the query string
-  var query = url.parse(req.url, true, true).query;
-
-  if (query && query.name) {
-    // Set a new cookie with the name
-    res.setHeader('Set-Cookie', cookie.serialize('name', String(query.name), {
-      httpOnly: true,
-      maxAge: 60 * 60 * 24 * 7 // 1 week
-    }));
-
-    // Redirect back after setting cookie
-    res.statusCode = 302;
-    res.setHeader('Location', req.headers.referer || '/');
-    res.end();
-    return;
-  }
-
-  // Parse the cookies on the request
-  var cookies = cookie.parse(req.headers.cookie || '');
-
-  // Get the visitor name set in the cookie
-  var name = cookies.name;
-
-  res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-
-  if (name) {
-    res.write('<p>Welcome back, <b>' + escapeHtml(name) + '</b>!</p>');
-  } else {
-    res.write('<p>Hello, new visitor!</p>');
-  }
-
-  res.write('<form method="GET">');
-  res.write('<input placeholder="enter your name" name="name"> <input type="submit" value="Set Name">');
-  res.end('</form>');
+var corsOptions = {
+  origin: 'http://example.com',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }
 
-http.createServer(onRequest).listen(3000);
+// Adds headers: Access-Control-Allow-Origin: http://example.com, Vary: Origin
+app.get('/products/:id', cors(corsOptions), function (req, res, next) {
+  res.json({msg: 'Hello'})
+})
+
+app.listen(80, function () {
+  console.log('web server listening on port 80')
+})
 ```
 
-## Testing
+### Configuring CORS w/ Dynamic Origin
 
-```sh
-$ npm test
+This module supports validating the origin dynamically using a function provided
+to the `origin` option. This function will be passed a string that is the origin
+(or `undefined` if the request has no origin), and a `callback` with the signature
+`callback(error, origin)`.
+
+The `origin` argument to the callback can be any value allowed for the `origin`
+option of the middleware, except a function. See the
+[configuration options](#configuration-options) section for more information on all
+the possible value types.
+
+This function is designed to allow the dynamic loading of allowed origin(s) from
+a backing datasource, like a database.
+
+```javascript
+var express = require('express')
+var cors = require('cors')
+var app = express()
+
+var corsOptions = {
+  origin: function (origin, callback) {
+    // db.loadOrigins is an example call to load
+    // a list of origins from a backing database
+    db.loadOrigins(function (error, origins) {
+      callback(error, origins)
+    })
+  }
+}
+
+// Adds headers: Access-Control-Allow-Origin: <matched origin>, Vary: Origin
+app.get('/products/:id', cors(corsOptions), function (req, res, next) {
+  res.json({msg: 'Hello'})
+})
+
+app.listen(80, function () {
+  console.log('web server listening on port 80')
+})
 ```
 
-## Benchmark
+### Enabling CORS Pre-Flight
 
-```
-$ npm run bench
+Certain CORS requests are considered 'complex' and require an initial
+`OPTIONS` request (called the "pre-flight request"). An example of a
+'complex' CORS request is one that uses an HTTP verb other than
+GET/HEAD/POST (such as DELETE) or that uses custom headers. To enable
+pre-flighting, you must add a new OPTIONS handler for the route you want
+to support:
 
-> cookie@0.5.0 bench
-> node benchmark/index.js
+```javascript
+var express = require('express')
+var cors = require('cors')
+var app = express()
 
-  node@18.18.2
-  acorn@8.10.0
-  ada@2.6.0
-  ares@1.19.1
-  brotli@1.0.9
-  cldr@43.1
-  icu@73.2
-  llhttp@6.0.11
-  modules@108
-  napi@9
-  nghttp2@1.57.0
-  nghttp3@0.7.0
-  ngtcp2@0.8.1
-  openssl@3.0.10+quic
-  simdutf@3.2.14
-  tz@2023c
-  undici@5.26.3
-  unicode@15.0
-  uv@1.44.2
-  uvwasi@0.0.18
-  v8@10.2.154.26-node.26
-  zlib@1.2.13.1-motley
+app.options('/products/:id', cors()) // preflight for DELETE
+app.del('/products/:id', cors(), function (req, res, next) {
+  res.json({msg: 'Hello'})
+})
 
-> node benchmark/parse-top.js
-
-  cookie.parse - top sites
-
-  14 tests completed.
-
-  parse accounts.google.com x 2,588,913 ops/sec ±0.74% (186 runs sampled)
-  parse apple.com           x 2,370,002 ops/sec ±0.69% (186 runs sampled)
-  parse cloudflare.com      x 2,213,102 ops/sec ±0.88% (188 runs sampled)
-  parse docs.google.com     x 2,194,157 ops/sec ±1.03% (184 runs sampled)
-  parse drive.google.com    x 2,265,084 ops/sec ±0.79% (187 runs sampled)
-  parse en.wikipedia.org    x   457,099 ops/sec ±0.81% (186 runs sampled)
-  parse linkedin.com        x   504,407 ops/sec ±0.89% (186 runs sampled)
-  parse maps.google.com     x 1,230,959 ops/sec ±0.98% (186 runs sampled)
-  parse microsoft.com       x   926,294 ops/sec ±0.88% (184 runs sampled)
-  parse play.google.com     x 2,311,338 ops/sec ±0.83% (185 runs sampled)
-  parse support.google.com  x 1,508,850 ops/sec ±0.86% (186 runs sampled)
-  parse www.google.com      x 1,022,582 ops/sec ±1.32% (182 runs sampled)
-  parse youtu.be            x   332,136 ops/sec ±1.02% (185 runs sampled)
-  parse youtube.com         x   323,833 ops/sec ±0.77% (183 runs sampled)
-
-> node benchmark/parse.js
-
-  cookie.parse - generic
-
-  6 tests completed.
-
-  simple      x 3,214,032 ops/sec ±1.61% (183 runs sampled)
-  decode      x   587,237 ops/sec ±1.16% (187 runs sampled)
-  unquote     x 2,954,618 ops/sec ±1.35% (183 runs sampled)
-  duplicates  x   857,008 ops/sec ±0.89% (187 runs sampled)
-  10 cookies  x   292,133 ops/sec ±0.89% (187 runs sampled)
-  100 cookies x    22,610 ops/sec ±0.68% (187 runs sampled)
+app.listen(80, function () {
+  console.log('web server listening on port 80')
+})
 ```
 
-## References
+You can also enable pre-flight across-the-board like so:
 
-- [RFC 6265: HTTP State Management Mechanism][rfc-6265]
-- [Same-site Cookies][rfc-6265bis-09-5.4.7]
+```javascript
+app.options('*', cors()) // include before other routes
+```
 
-[rfc-cutler-httpbis-partitioned-cookies]: https://tools.ietf.org/html/draft-cutler-httpbis-partitioned-cookies/
-[rfc-west-cookie-priority-00-4.1]: https://tools.ietf.org/html/draft-west-cookie-priority-00#section-4.1
-[rfc-6265bis-09-5.4.7]: https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-09#section-5.4.7
-[rfc-6265]: https://tools.ietf.org/html/rfc6265
-[rfc-6265-5.1.4]: https://tools.ietf.org/html/rfc6265#section-5.1.4
-[rfc-6265-5.2.1]: https://tools.ietf.org/html/rfc6265#section-5.2.1
-[rfc-6265-5.2.2]: https://tools.ietf.org/html/rfc6265#section-5.2.2
-[rfc-6265-5.2.3]: https://tools.ietf.org/html/rfc6265#section-5.2.3
-[rfc-6265-5.2.4]: https://tools.ietf.org/html/rfc6265#section-5.2.4
-[rfc-6265-5.2.5]: https://tools.ietf.org/html/rfc6265#section-5.2.5
-[rfc-6265-5.2.6]: https://tools.ietf.org/html/rfc6265#section-5.2.6
-[rfc-6265-5.3]: https://tools.ietf.org/html/rfc6265#section-5.3
+NOTE: When using this middleware as an application level middleware (for
+example, `app.use(cors())`), pre-flight requests are already handled for all
+routes.
+
+### Customizing CORS Settings Dynamically per Request
+
+For APIs that require different CORS configurations for specific routes or requests, you can dynamically generate CORS options based on the incoming request. The `cors` middleware allows you to achieve this by passing a function instead of static options. This function is called for each incoming request and must use the callback pattern to return the appropriate CORS options.
+
+The function accepts:
+1. **`req`**: 
+   - The incoming request object.
+
+2. **`callback(error, corsOptions)`**: 
+   - A function used to return the computed CORS options.
+   - **Arguments**:
+     - **`error`**: Pass `null` if there’s no error, or an error object to indicate a failure.
+     - **`corsOptions`**: An object specifying the CORS policy for the current request.
+
+Here’s an example that handles both public routes and restricted, credential-sensitive routes:
+
+```javascript
+var dynamicCorsOptions = function(req, callback) {
+  var corsOptions;
+  if (req.path.startsWith('/auth/connect/')) {
+    // Access-Control-Allow-Origin: http://mydomain.com, Access-Control-Allow-Credentials: true, Vary: Origin
+    corsOptions = {
+      origin: 'http://mydomain.com',
+      credentials: true
+    };
+  } else {
+    // Access-Control-Allow-Origin: *
+    corsOptions = { origin: '*' };
+  }
+  callback(null, corsOptions);
+};
+
+app.use(cors(dynamicCorsOptions));
+
+app.get('/auth/connect/twitter', function (req, res) {
+  res.send('Hello');
+});
+
+app.get('/public', function (req, res) {
+  res.send('Hello');
+});
+
+app.listen(80, function () {
+  console.log('web server listening on port 80')
+})
+```
+
+## Configuration Options
+
+* `origin`: Configures the **Access-Control-Allow-Origin** CORS header. Possible values:
+  - `Boolean` - set `origin` to `true` to reflect the [request origin](https://datatracker.ietf.org/doc/html/draft-abarth-origin-09), as defined by `req.header('Origin')`, or set it to `false` to disable CORS.
+  - `String` - set `origin` to a specific origin. For example, if you set it to
+    - `"http://example.com"` only requests from "http://example.com" will be allowed.
+    - `"*"` for all domains to be allowed. 
+  - `RegExp` - set `origin` to a regular expression pattern which will be used to test the request origin. If it's a match, the request origin will be reflected. For example the pattern `/example\.com$/` will reflect any request that is coming from an origin ending with "example.com".
+  - `Array` - set `origin` to an array of valid origins. Each origin can be a `String` or a `RegExp`. For example `["http://example1.com", /\.example2\.com$/]` will accept any request from "http://example1.com" or from a subdomain of "example2.com".
+  - `Function` - set `origin` to a function implementing some custom logic. The function takes the request origin as the first parameter and a callback (called as `callback(err, origin)`, where `origin` is a non-function value of the `origin` option) as the second.
+* `methods`: Configures the **Access-Control-Allow-Methods** CORS header. Expects a comma-delimited string (ex: 'GET,PUT,POST') or an array (ex: `['GET', 'PUT', 'POST']`).
+* `allowedHeaders`: Configures the **Access-Control-Allow-Headers** CORS header. Expects a comma-delimited string (ex: 'Content-Type,Authorization') or an array (ex: `['Content-Type', 'Authorization']`). If not specified, defaults to reflecting the headers specified in the request's **Access-Control-Request-Headers** header.
+* `exposedHeaders`: Configures the **Access-Control-Expose-Headers** CORS header. Expects a comma-delimited string (ex: 'Content-Range,X-Content-Range') or an array (ex: `['Content-Range', 'X-Content-Range']`). If not specified, no custom headers are exposed.
+* `credentials`: Configures the **Access-Control-Allow-Credentials** CORS header. Set to `true` to pass the header, otherwise it is omitted.
+* `maxAge`: Configures the **Access-Control-Max-Age** CORS header. Set to an integer to pass the header, otherwise it is omitted.
+* `preflightContinue`: Pass the CORS preflight response to the next handler.
+* `optionsSuccessStatus`: Provides a status code to use for successful `OPTIONS` requests, since some legacy browsers (IE11, various SmartTVs) choke on `204`.
+
+The default configuration is the equivalent of:
+
+```json
+{
+  "origin": "*",
+  "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+  "preflightContinue": false,
+  "optionsSuccessStatus": 204
+}
+```
+
+## Common Misconceptions
+
+### "CORS blocks requests from disallowed origins"
+
+**No.** Your server receives and processes every request. CORS headers tell the browser whether JavaScript can read the response—not whether the request is allowed.
+
+### "CORS protects my API from unauthorized access"
+
+**No.** CORS is not access control. Any HTTP client (curl, Postman, another server) can call your API regardless of CORS settings. Use authentication and authorization to protect your API.
+
+### "Setting `origin: 'http://example.com'` means only that domain can access my server"
+
+**No.** It means browsers will only let JavaScript from that origin read responses. The server still responds to all requests.
 
 ## License
 
-[MIT](LICENSE)
+[MIT License](http://www.opensource.org/licenses/mit-license.php)
 
-[ci-image]: https://badgen.net/github/checks/jshttp/cookie/master?label=ci
-[ci-url]: https://github.com/jshttp/cookie/actions/workflows/ci.yml
-[coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/cookie/master
-[coveralls-url]: https://coveralls.io/r/jshttp/cookie?branch=master
-[node-image]: https://badgen.net/npm/node/cookie
-[node-url]: https://nodejs.org/en/download
-[npm-downloads-image]: https://badgen.net/npm/dm/cookie
-[npm-url]: https://npmjs.org/package/cookie
-[npm-version-image]: https://badgen.net/npm/v/cookie
+## Original Author
+
+[Troy Goode](https://github.com/TroyGoode) ([troygoode@gmail.com](mailto:troygoode@gmail.com))
+
+[coveralls-image]: https://img.shields.io/coveralls/expressjs/cors/master.svg
+[coveralls-url]: https://coveralls.io/r/expressjs/cors?branch=master
+[downloads-image]: https://img.shields.io/npm/dm/cors.svg
+[downloads-url]: https://npmjs.com/package/cors
+[github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/expressjs/cors/ci.yml?branch=master&label=ci
+[github-actions-ci-url]: https://github.com/expressjs/cors?query=workflow%3Aci
+[npm-image]: https://img.shields.io/npm/v/cors.svg
+[npm-url]: https://npmjs.com/package/cors
