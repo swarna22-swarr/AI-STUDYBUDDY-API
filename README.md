@@ -1,150 +1,385 @@
-# node-jwa [![Build Status](https://travis-ci.org/brianloveswords/node-jwa.svg?branch=master)](https://travis-ci.org/brianloveswords/node-jwa)
+# kareem
 
-A
-[JSON Web Algorithms](http://tools.ietf.org/id/draft-ietf-jose-json-web-algorithms-08.html)
-implementation focusing (exclusively, at this point) on the algorithms necessary for
-[JSON Web Signatures](http://self-issued.info/docs/draft-ietf-jose-json-web-signature.html).
+  [![Build Status](https://github.com/mongoosejs/kareem/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/mongoosejs/kareem/actions/workflows/test.yml)
+  <!--[![Coverage Status](https://img.shields.io/coveralls/vkarpov15/kareem.svg)](https://coveralls.io/r/vkarpov15/kareem)-->
 
-This library supports all of the required, recommended and optional cryptographic algorithms for JWS:
+Re-imagined take on the [hooks](http://npmjs.org/package/hooks) module, meant to offer additional flexibility in allowing you to execute hooks whenever necessary, as opposed to simply wrapping a single function.
 
-alg Parameter Value | Digital Signature or MAC Algorithm
-----------------|----------------------------
-HS256 | HMAC using SHA-256 hash algorithm
-HS384 | HMAC using SHA-384 hash algorithm
-HS512 | HMAC using SHA-512 hash algorithm
-RS256 | RSASSA using SHA-256 hash algorithm
-RS384 | RSASSA using SHA-384 hash algorithm
-RS512 | RSASSA using SHA-512 hash algorithm
-PS256 | RSASSA-PSS using SHA-256 hash algorithm
-PS384 | RSASSA-PSS using SHA-384 hash algorithm
-PS512 | RSASSA-PSS using SHA-512 hash algorithm
-ES256 | ECDSA using P-256 curve and SHA-256 hash algorithm
-ES384 | ECDSA using P-384 curve and SHA-384 hash algorithm
-ES512 | ECDSA using P-521 curve and SHA-512 hash algorithm
-none | No digital signature or MAC value included
+Named for the NBA's 2nd all-time leading scorer Kareem Abdul-Jabbar, known for his mastery of the [hook shot](http://en.wikipedia.org/wiki/Kareem_Abdul-Jabbar#Skyhook)
 
-Please note that PS* only works on Node 6.12+ (excluding 7.x).
+<img src="http://upload.wikimedia.org/wikipedia/commons/0/00/Kareem-Abdul-Jabbar_Lipofsky.jpg" width="220">
 
-# Requirements
+<!--DOCS START-->
 
-In order to run the tests, a recent version of OpenSSL is
-required. **The version that comes with OS X (OpenSSL 0.9.8r 8 Feb
-2011) is not recent enough**, as it does not fully support ECDSA
-keys. You'll need to use a version > 1.0.0; I tested with OpenSSL 1.0.1c 10 May 2012.
+# API
 
-# Testing
+## pre hooks
 
-To run the tests, do
+Much like [hooks](https://npmjs.org/package/hooks), kareem lets you define
+pre and post hooks: pre hooks are called before a given function executes.
+Unlike hooks, kareem stores hooks and other internal state in a separate
+object, rather than relying on inheritance. Furthermore, kareem exposes
+an `execPre()` function that allows you to execute your pre hooks when
+appropriate, giving you more fine-grained control over your function hooks.
 
-```bash
-$ npm test
+### It runs without any hooks specified
+
+```javascript
+await hooks.execPre('cook', null);
 ```
 
-This will generate a bunch of keypairs to use in testing. If you want to
-generate new keypairs, do `make clean` before running `npm test` again.
+### It runs basic serial pre hooks
 
-## Methodology
+pre hook functions can return a promise that resolves when finished.
 
-I spawn `openssl dgst -sign` to test OpenSSL sign → JS verify and
-`openssl dgst -verify` to test JS sign → OpenSSL verify for each of the
-RSA and ECDSA algorithms.
+```javascript
+let count = 0;
 
-# Usage
+hooks.pre('cook', function() {
+  ++count;
+  return Promise.resolve();
+});
 
-## jwa(algorithm)
-
-Creates a new `jwa` object with `sign` and `verify` methods for the
-algorithm. Valid values for algorithm can be found in the table above
-(`'HS256'`, `'HS384'`, etc) and are case-sensitive. Passing an invalid
-algorithm value will throw a `TypeError`.
-
-
-## jwa#sign(input, secretOrPrivateKey)
-
-Sign some input with either a secret for HMAC algorithms, or a private
-key for RSA and ECDSA algorithms.
-
-If input is not already a string or buffer, `JSON.stringify` will be
-called on it to attempt to coerce it.
-
-For the HMAC algorithm, `secretOrPrivateKey` should be a string or a
-buffer. For ECDSA and RSA, the value should be a string representing a
-PEM encoded **private** key.
-
-Output [base64url](http://en.wikipedia.org/wiki/Base64#URL_applications)
-formatted. This is for convenience as JWS expects the signature in this
-format. If your application needs the output in a different format,
-[please open an issue](https://github.com/brianloveswords/node-jwa/issues). In
-the meantime, you can use
-[brianloveswords/base64url](https://github.com/brianloveswords/base64url)
-to decode the signature.
-
-As of nodejs *v0.11.8*, SPKAC support was introduce. If your nodeJs
-version satisfies, then you can pass an object `{ key: '..', passphrase: '...' }`
-
-
-## jwa#verify(input, signature, secretOrPublicKey)
-
-Verify a signature. Returns `true` or `false`.
-
-`signature` should be a base64url encoded string.
-
-For the HMAC algorithm, `secretOrPublicKey` should be a string or a
-buffer. For ECDSA and RSA, the value should be a string represented a
-PEM encoded **public** key.
-
-
-# Example
-
-HMAC
-```js
-const jwa = require('jwa');
-
-const hmac = jwa('HS256');
-const input = 'super important stuff';
-const secret = 'shhhhhh';
-
-const signature = hmac.sign(input, secret);
-hmac.verify(input, signature, secret) // === true
-hmac.verify(input, signature, 'trickery!') // === false
+await hooks.execPre('cook', null);
+assert.equal(1, count);
 ```
 
-With keys
-```js
-const fs = require('fs');
-const jwa = require('jwa');
-const privateKey = fs.readFileSync(__dirname + '/ecdsa-p521-private.pem');
-const publicKey = fs.readFileSync(__dirname + '/ecdsa-p521-public.pem');
+### It can run multiple pre hooks
 
-const ecdsa = jwa('ES512');
-const input = 'very important stuff';
+```javascript
+let count1 = 0;
+let count2 = 0;
 
-const signature = ecdsa.sign(input, privateKey);
-ecdsa.verify(input, signature, publicKey) // === true
+hooks.pre('cook', function() {
+  ++count1;
+  return Promise.resolve();
+});
+
+hooks.pre('cook', function() {
+  ++count2;
+  return Promise.resolve();
+});
+
+await hooks.execPre('cook', null);
+assert.equal(1, count1);
+assert.equal(1, count2);
 ```
-## License
 
-MIT
+### It can run fully synchronous pre hooks
 
+If your pre hook function takes no parameters, its assumed to be
+fully synchronous.
+
+```javascript
+let count1 = 0;
+let count2 = 0;
+
+hooks.pre('cook', function() {
+  ++count1;
+});
+
+hooks.pre('cook', function() {
+  ++count2;
+});
+
+await hooks.execPre('cook', null);
+assert.equal(1, count1);
+assert.equal(1, count2);
 ```
-Copyright (c) 2013 Brian J. Brennan
 
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+### It properly attaches context to pre hooks
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+Pre save hook functions are bound to the second parameter to `execPre()`
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```javascript
+hooks.pre('cook', function() {
+  this.bacon = 3;
+});
+
+hooks.pre('cook', function() {
+  this.eggs = 4;
+});
+
+const obj = { bacon: 0, eggs: 0 };
+
+// In the pre hooks, `this` will refer to `obj`
+await hooks.execPre('cook', obj);
+assert.equal(3, obj.bacon);
+assert.equal(4, obj.eggs);
+```
+
+### It supports returning a promise
+
+You can also return a promise from your pre hooks instead of calling
+`next()`. When the returned promise resolves, kareem will kick off the
+next middleware.
+
+```javascript
+hooks.pre('cook', function() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      this.bacon = 3;
+      resolve();
+    }, 100);
+  });
+});
+
+const obj = { bacon: 0 };
+
+await hooks.execPre('cook', obj);
+assert.equal(3, obj.bacon);
+```
+
+### It supports filtering which hooks to run
+
+You can pass a `filter` option to `execPre()` to select which hooks
+to run. The filter function receives each hook object and should return
+`true` to run the hook or `false` to skip it.
+
+```javascript
+const execed = [];
+
+const fn1 = function() { execed.push('first'); };
+fn1.skipMe = true;
+hooks.pre('cook', fn1);
+
+const fn2 = function() { execed.push('second'); };
+hooks.pre('cook', fn2);
+
+// Only runs fn2, skips fn1 because fn1.skipMe is true
+await hooks.execPre('cook', null, [], {
+  filter: hook => !hook.fn.skipMe
+});
+
+assert.deepStrictEqual(execed, ['second']);
+```
+
+## post hooks
+
+### It runs without any hooks specified
+
+```javascript
+const [eggs] = await hooks.execPost('cook', null, [1]);
+assert.equal(eggs, 1);
+```
+
+### It executes with parameters passed in
+
+```javascript
+hooks.post('cook', function(eggs, bacon, callback) {
+  assert.equal(eggs, 1);
+  assert.equal(bacon, 2);
+  callback();
+});
+
+const [eggs, bacon] = await hooks.execPost('cook', null, [1, 2]);
+assert.equal(eggs, 1);
+assert.equal(bacon, 2);
+```
+
+### It can use synchronous post hooks
+
+```javascript
+const execed = {};
+
+hooks.post('cook', function(eggs, bacon) {
+  execed.first = true;
+  assert.equal(eggs, 1);
+  assert.equal(bacon, 2);
+});
+
+hooks.post('cook', function(eggs, bacon, callback) {
+  execed.second = true;
+  assert.equal(eggs, 1);
+  assert.equal(bacon, 2);
+  callback();
+});
+
+const [eggs, bacon] = await hooks.execPost('cook', null, [1, 2]);
+assert.equal(Object.keys(execed).length, 2);
+assert.ok(execed.first);
+assert.ok(execed.second);
+assert.equal(eggs, 1);
+assert.equal(bacon, 2);
+```
+
+### It supports returning a promise
+
+You can also return a promise from your post hooks instead of calling
+`next()`. When the returned promise resolves, kareem will kick off the
+next middleware.
+
+```javascript
+hooks.post('cook', function() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      this.bacon = 3;
+      resolve();
+    }, 100);
+  });
+});
+
+const obj = { bacon: 0 };
+
+await hooks.execPost('cook', obj, [obj]);
+assert.equal(obj.bacon, 3);
+```
+
+### It supports filtering which hooks to run
+
+You can pass a `filter` option to `execPost()` to select which hooks
+to run. The filter function receives each hook object and should return
+`true` to run the hook or `false` to skip it.
+
+```javascript
+const execed = [];
+
+const fn1 = function() { execed.push('first'); };
+fn1.skipMe = true;
+hooks.post('cook', fn1);
+
+const fn2 = function() { execed.push('second'); };
+hooks.post('cook', fn2);
+
+// Only runs fn2, skips fn1 because fn1.skipMe is true
+await hooks.execPost('cook', null, [], {
+  filter: hook => !hook.fn.skipMe
+});
+
+assert.deepStrictEqual(execed, ['second']);
+```
+
+## wrap()
+
+### It wraps pre and post calls into one call
+
+```javascript
+hooks.pre('cook', function() {
+  return new Promise(resolve => {
+    this.bacon = 3;
+    setTimeout(() => {
+      resolve();
+    }, 5);
+  });
+});
+
+hooks.pre('cook', function() {
+  this.eggs = 4;
+  return Promise.resolve();
+});
+
+hooks.pre('cook', function() {
+  this.waffles = false;
+  return Promise.resolve();
+});
+
+hooks.post('cook', function(obj) {
+  obj.tofu = 'no';
+});
+
+const obj = { bacon: 0, eggs: 0 };
+
+const args = [obj];
+
+const result = await hooks.wrap(
+  'cook',
+  function(o) {
+    assert.equal(obj.bacon, 3);
+    assert.equal(obj.eggs, 4);
+    assert.equal(obj.waffles, false);
+    assert.equal(obj.tofu, undefined);
+    return o;
+  },
+  obj,
+  args);
+
+assert.equal(obj.bacon, 3);
+assert.equal(obj.eggs, 4);
+assert.equal(obj.waffles, false);
+assert.equal(obj.tofu, 'no');
+assert.equal(result, obj);
+```
+
+## createWrapper()
+
+### It wraps wrap() into a callable function
+
+```javascript
+hooks.pre('cook', function() {
+  this.bacon = 3;
+  return Promise.resolve();
+});
+
+hooks.pre('cook', function() {
+  return new Promise(resolve => {
+    this.eggs = 4;
+    setTimeout(function() {
+      resolve();
+    }, 10);
+  });
+});
+
+hooks.pre('cook', function() {
+  this.waffles = false;
+  return Promise.resolve();
+});
+
+hooks.post('cook', function(obj) {
+  obj.tofu = 'no';
+});
+
+const obj = { bacon: 0, eggs: 0 };
+
+const cook = hooks.createWrapper(
+  'cook',
+  function(o) {
+    assert.equal(3, obj.bacon);
+    assert.equal(4, obj.eggs);
+    assert.equal(false, obj.waffles);
+    assert.equal(undefined, obj.tofu);
+    return o;
+  },
+  obj);
+
+const result = await cook(obj);
+assert.equal(obj.bacon, 3);
+assert.equal(obj.eggs, 4);
+assert.equal(obj.waffles, false);
+assert.equal(obj.tofu, 'no');
+
+assert.equal(result, obj);
+```
+
+## clone()
+
+### It clones a Kareem object
+
+```javascript
+const k1 = new Kareem();
+k1.pre('cook', function() {});
+k1.post('cook', function() {});
+
+const k2 = k1.clone();
+assert.deepEqual(Array.from(k2._pres.keys()), ['cook']);
+assert.deepEqual(Array.from(k2._posts.keys()), ['cook']);
+```
+
+## merge()
+
+### It pulls hooks from another Kareem object
+
+```javascript
+const k1 = new Kareem();
+const test1 = function() {};
+k1.pre('cook', test1);
+k1.post('cook', function() {});
+
+const k2 = new Kareem();
+const test2 = function() {};
+k2.pre('cook', test2);
+const k3 = k2.merge(k1);
+assert.equal(k3._pres.get('cook').length, 2);
+assert.equal(k3._pres.get('cook')[0].fn, test2);
+assert.equal(k3._pres.get('cook')[1].fn, test1);
+assert.equal(k3._posts.get('cook').length, 1);
 ```
