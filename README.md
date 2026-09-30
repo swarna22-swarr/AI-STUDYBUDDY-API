@@ -1,44 +1,57 @@
-# `append-field`
+# balanced-match
 
-A [W3C HTML JSON forms spec](http://www.w3.org/TR/html-json-forms/) compliant
-field appender (for lack of a better name). Useful for people implementing
-`application/x-www-form-urlencoded` and `multipart/form-data` parsers.
+Match balanced string pairs, like `{` and `}` or `<b>` and
+`</b>`. Supports regular expressions as well!
 
-It works best on objects created with `Object.create(null)`. Otherwise it might
-conflict with variables from the prototype (e.g. `hasOwnProperty`).
+## Example
 
-## Installation
+Get the first matching pair of braces:
 
-```sh
-npm install --save append-field
+```js
+import { balanced } from 'balanced-match'
+
+console.log(balanced('{', '}', 'pre{in{nested}}post'))
+console.log(balanced('{', '}', 'pre{first}between{second}post'))
+console.log(
+  balanced(/\s+\{\s+/, /\s+\}\s+/, 'pre  {   in{nest}   }  post'),
+)
 ```
 
-## Usage
+The matches are:
 
-```javascript
-var appendField = require('append-field')
-var obj = Object.create(null)
-
-appendField(obj, 'pets[0][species]', 'Dahut')
-appendField(obj, 'pets[0][name]', 'Hypatia')
-appendField(obj, 'pets[1][species]', 'Felis Stultus')
-appendField(obj, 'pets[1][name]', 'Billie')
-
-console.log(obj)
-```
-
-```text
-{ pets:
-   [ { species: 'Dahut', name: 'Hypatia' },
-     { species: 'Felis Stultus', name: 'Billie' } ] }
+```bash
+$ node example.js
+{ start: 3, end: 14, pre: 'pre', body: 'in{nested}', post: 'post' }
+{ start: 3,
+  end: 9,
+  pre: 'pre',
+  body: 'first',
+  post: 'between{second}post' }
+{ start: 3, end: 17, pre: 'pre', body: 'in{nest}', post: 'post' }
 ```
 
 ## API
 
-### `appendField(store, key, value)`
+### const m = balanced(a, b, str)
 
-Adds the field named `key` with the value `value` to the object `store`.
+For the first non-nested matching pair of `a` and `b` in `str`, return an
+object with those keys:
 
-## License
+- **start** the index of the first match of `a`
+- **end** the index of the matching `b`
+- **pre** the preamble, `a` and `b` not included
+- **body** the match, `a` and `b` not included
+- **post** the postscript, `a` and `b` not included
 
-MIT
+If there's no match, `undefined` will be returned.
+
+If the `str` contains more `a` than `b` / there are unmatched pairs, the first match that was closed will be used. For example, `{{a}` will match `['{', 'a', '']` and `{a}}` will match `['', 'a', '}']`.
+
+### const r = balanced.range(a, b, str)
+
+For the first non-nested matching pair of `a` and `b` in `str`, return an
+array with indexes: `[ <a index>, <b index> ]`.
+
+If there's no match, `undefined` will be returned.
+
+If the `str` contains more `a` than `b` / there are unmatched pairs, the first match that was closed will be used. For example, `{{a}` will match `[ 1, 3 ]` and `{a}}` will match `[0, 2]`.
