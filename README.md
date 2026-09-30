@@ -1,6 +1,6 @@
-# is-glob [![NPM version](https://img.shields.io/npm/v/is-glob.svg?style=flat)](https://www.npmjs.com/package/is-glob) [![NPM monthly downloads](https://img.shields.io/npm/dm/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![NPM total downloads](https://img.shields.io/npm/dt/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![Build Status](https://img.shields.io/github/workflow/status/micromatch/is-glob/dev)](https://github.com/micromatch/is-glob/actions)
+# is-number [![NPM version](https://img.shields.io/npm/v/is-number.svg?style=flat)](https://www.npmjs.com/package/is-number) [![NPM monthly downloads](https://img.shields.io/npm/dm/is-number.svg?style=flat)](https://npmjs.org/package/is-number) [![NPM total downloads](https://img.shields.io/npm/dt/is-number.svg?style=flat)](https://npmjs.org/package/is-number) [![Linux Build Status](https://img.shields.io/travis/jonschlinkert/is-number.svg?style=flat&label=Travis)](https://travis-ci.org/jonschlinkert/is-number)
 
-> Returns `true` if the given string looks like a glob pattern or an extglob pattern. This makes it easy to create code that only uses external modules like node-glob when necessary, resulting in much faster code execution and initialization time, and a better user experience.
+> Returns true if the value is a finite number.
 
 Please consider following this project's author, [Jon Schlinkert](https://github.com/jonschlinkert), and consider starring the project to show your :heart: and support.
 
@@ -9,131 +9,113 @@ Please consider following this project's author, [Jon Schlinkert](https://github
 Install with [npm](https://www.npmjs.com/):
 
 ```sh
-$ npm install --save is-glob
+$ npm install --save is-number
 ```
 
-You might also be interested in [is-valid-glob](https://github.com/jonschlinkert/is-valid-glob) and [has-glob](https://github.com/jonschlinkert/has-glob).
+## Why is this needed?
+
+In JavaScript, it's not always as straightforward as it should be to reliably check if a value is a number. It's common for devs to use `+`, `-`, or `Number()` to cast a string value to a number (for example, when values are returned from user input, regex matches, parsers, etc). But there are many non-intuitive edge cases that yield unexpected results:
+
+```js
+console.log(+[]); //=> 0
+console.log(+''); //=> 0
+console.log(+'   '); //=> 0
+console.log(typeof NaN); //=> 'number'
+```
+
+This library offers a performant way to smooth out edge cases like these.
 
 ## Usage
 
 ```js
-var isGlob = require('is-glob');
+const isNumber = require('is-number');
 ```
 
-### Default behavior
+See the [tests](./test.js) for more examples.
 
-**True**
-
-Patterns that have glob characters or regex patterns will return `true`:
+### true
 
 ```js
-isGlob('!foo.js');
-isGlob('*.js');
-isGlob('**/abc.js');
-isGlob('abc/*.js');
-isGlob('abc/(aaa|bbb).js');
-isGlob('abc/[a-z].js');
-isGlob('abc/{a,b}.js');
-//=> true
+isNumber(5e3);               // true
+isNumber(0xff);              // true
+isNumber(-1.1);              // true
+isNumber(0);                 // true
+isNumber(1);                 // true
+isNumber(1.1);               // true
+isNumber(10);                // true
+isNumber(10.10);             // true
+isNumber(100);               // true
+isNumber('-1.1');            // true
+isNumber('0');               // true
+isNumber('012');             // true
+isNumber('0xff');            // true
+isNumber('1');               // true
+isNumber('1.1');             // true
+isNumber('10');              // true
+isNumber('10.10');           // true
+isNumber('100');             // true
+isNumber('5e3');             // true
+isNumber(parseInt('012'));   // true
+isNumber(parseFloat('012')); // true
 ```
 
-Extglobs
+### False
+
+Everything else is false, as you would expect:
 
 ```js
-isGlob('abc/@(a).js');
-isGlob('abc/!(a).js');
-isGlob('abc/+(a).js');
-isGlob('abc/*(a).js');
-isGlob('abc/?(a).js');
-//=> true
+isNumber(Infinity);          // false
+isNumber(NaN);               // false
+isNumber(null);              // false
+isNumber(undefined);         // false
+isNumber('');                // false
+isNumber('   ');             // false
+isNumber('foo');             // false
+isNumber([1]);               // false
+isNumber([]);                // false
+isNumber(function () {});    // false
+isNumber({});                // false
 ```
 
-**False**
+## Release history
 
-Escaped globs or extglobs return `false`:
+### 7.0.0
 
-```js
-isGlob('abc/\\@(a).js');
-isGlob('abc/\\!(a).js');
-isGlob('abc/\\+(a).js');
-isGlob('abc/\\*(a).js');
-isGlob('abc/\\?(a).js');
-isGlob('\\!foo.js');
-isGlob('\\*.js');
-isGlob('\\*\\*/abc.js');
-isGlob('abc/\\*.js');
-isGlob('abc/\\(aaa|bbb).js');
-isGlob('abc/\\[a-z].js');
-isGlob('abc/\\{a,b}.js');
-//=> false
+* Refactor. Now uses `.isFinite` if it exists.
+* Performance is about the same as v6.0 when the value is a string or number. But it's now 3x-4x faster when the value is not a string or number.
+
+### 6.0.0
+
+* Optimizations, thanks to @benaadams.
+
+### 5.0.0
+
+**Breaking changes**
+
+* removed support for `instanceof Number` and `instanceof String`
+
+## Benchmarks
+
+As with all benchmarks, take these with a grain of salt. See the [benchmarks](./benchmark/index.js) for more detail.
+
 ```
+# all
+v7.0 x 413,222 ops/sec ±2.02% (86 runs sampled)
+v6.0 x 111,061 ops/sec ±1.29% (85 runs sampled)
+parseFloat x 317,596 ops/sec ±1.36% (86 runs sampled)
+fastest is 'v7.0'
 
-Patterns that do not have glob patterns return `false`:
+# string
+v7.0 x 3,054,496 ops/sec ±1.05% (89 runs sampled)
+v6.0 x 2,957,781 ops/sec ±0.98% (88 runs sampled)
+parseFloat x 3,071,060 ops/sec ±1.13% (88 runs sampled)
+fastest is 'parseFloat,v7.0'
 
-```js
-isGlob('abc.js');
-isGlob('abc/def/ghi.js');
-isGlob('foo.js');
-isGlob('abc/@.js');
-isGlob('abc/+.js');
-isGlob('abc/?.js');
-isGlob();
-isGlob(null);
-//=> false
-```
-
-Arrays are also `false` (If you want to check if an array has a glob pattern, use [has-glob](https://github.com/jonschlinkert/has-glob)):
-
-```js
-isGlob(['**/*.js']);
-isGlob(['foo.js']);
-//=> false
-```
-
-### Option strict
-
-When `options.strict === false` the behavior is less strict in determining if a pattern is a glob. Meaning that
-some patterns that would return `false` may return `true`. This is done so that matching libraries like [micromatch](https://github.com/micromatch/micromatch) have a chance at determining if the pattern is a glob or not.
-
-**True**
-
-Patterns that have glob characters or regex patterns will return `true`:
-
-```js
-isGlob('!foo.js', {strict: false});
-isGlob('*.js', {strict: false});
-isGlob('**/abc.js', {strict: false});
-isGlob('abc/*.js', {strict: false});
-isGlob('abc/(aaa|bbb).js', {strict: false});
-isGlob('abc/[a-z].js', {strict: false});
-isGlob('abc/{a,b}.js', {strict: false});
-//=> true
-```
-
-Extglobs
-
-```js
-isGlob('abc/@(a).js', {strict: false});
-isGlob('abc/!(a).js', {strict: false});
-isGlob('abc/+(a).js', {strict: false});
-isGlob('abc/*(a).js', {strict: false});
-isGlob('abc/?(a).js', {strict: false});
-//=> true
-```
-
-**False**
-
-Escaped globs or extglobs return `false`:
-
-```js
-isGlob('\\!foo.js', {strict: false});
-isGlob('\\*.js', {strict: false});
-isGlob('\\*\\*/abc.js', {strict: false});
-isGlob('abc/\\*.js', {strict: false});
-isGlob('abc/\\(aaa|bbb).js', {strict: false});
-isGlob('abc/\\[a-z].js', {strict: false});
-isGlob('abc/\\{a,b}.js', {strict: false});
-//=> false
+# number
+v7.0 x 3,146,895 ops/sec ±0.89% (89 runs sampled)
+v6.0 x 3,214,038 ops/sec ±1.07% (89 runs sampled)
+parseFloat x 3,077,588 ops/sec ±1.07% (87 runs sampled)
+fastest is 'v6.0'
 ```
 
 ## About
@@ -173,34 +155,33 @@ $ npm install -g verbose/verb#dev verb-generate-readme && verb
 
 You might also be interested in these projects:
 
-* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble "Get the rocks out of your socks! Assemble makes you fast at creating web projects. Assemble is used by thousands of projects for rapid prototyping, creating themes, scaffolds, boilerplates, e-books, UI components, API documentation, blogs, building websit")
-* [base](https://www.npmjs.com/package/base): Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks | [homepage](https://github.com/node-base/base "Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks")
-* [update](https://www.npmjs.com/package/update): Be scalable! Update is a new, open source developer framework and CLI for automating updates… [more](https://github.com/update/update) | [homepage](https://github.com/update/update "Be scalable! Update is a new, open source developer framework and CLI for automating updates of any kind in code projects.")
-* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb "Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used on hundreds of projects of all sizes to generate everything from API docs to readmes.")
+* [is-plain-object](https://www.npmjs.com/package/is-plain-object): Returns true if an object was created by the `Object` constructor. | [homepage](https://github.com/jonschlinkert/is-plain-object "Returns true if an object was created by the `Object` constructor.")
+* [is-primitive](https://www.npmjs.com/package/is-primitive): Returns `true` if the value is a primitive.  | [homepage](https://github.com/jonschlinkert/is-primitive "Returns `true` if the value is a primitive. ")
+* [isobject](https://www.npmjs.com/package/isobject): Returns true if the value is an object and not an array or null. | [homepage](https://github.com/jonschlinkert/isobject "Returns true if the value is an object and not an array or null.")
+* [kind-of](https://www.npmjs.com/package/kind-of): Get the native type of a value. | [homepage](https://github.com/jonschlinkert/kind-of "Get the native type of a value.")
 
 ### Contributors
 
-| **Commits** | **Contributor** |  
-| --- | --- |  
-| 47 | [jonschlinkert](https://github.com/jonschlinkert) |  
-| 5  | [doowb](https://github.com/doowb) |  
-| 1  | [phated](https://github.com/phated) |  
-| 1  | [danhper](https://github.com/danhper) |  
-| 1  | [paulmillr](https://github.com/paulmillr) |  
+| **Commits** | **Contributor** | 
+| --- | --- |
+| 49 | [jonschlinkert](https://github.com/jonschlinkert) |
+| 5 | [charlike-old](https://github.com/charlike-old) |
+| 1 | [benaadams](https://github.com/benaadams) |
+| 1 | [realityking](https://github.com/realityking) |
 
 ### Author
 
 **Jon Schlinkert**
 
+* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
 * [GitHub Profile](https://github.com/jonschlinkert)
 * [Twitter Profile](https://twitter.com/jonschlinkert)
-* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
 
 ### License
 
-Copyright © 2019, [Jon Schlinkert](https://github.com/jonschlinkert).
+Copyright © 2018, [Jon Schlinkert](https://github.com/jonschlinkert).
 Released under the [MIT License](LICENSE).
 
 ***
 
-_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.8.0, on March 27, 2019._
+_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.6.0, on June 15, 2018._
