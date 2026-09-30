@@ -1,34 +1,29 @@
 {
-  "name": "ignore-by-default",
-  "version": "1.0.1",
-  "description": "A list of directories you should ignore by default",
-  "main": "index.js",
-  "files": [
-    "index.js"
-  ],
-  "scripts": {
-    "test": "standard && node test.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/novemberborn/ignore-by-default.git"
-  },
+  "name": "inherits",
+  "description": "Browser-friendly inheritance fully compatible with standard node.js inherits()",
+  "version": "2.0.4",
   "keywords": [
-    "ignore",
-    "chokidar",
-    "watcher",
-    "exclude",
-    "glob",
-    "pattern"
+    "inheritance",
+    "class",
+    "klass",
+    "oop",
+    "object-oriented",
+    "inherits",
+    "browser",
+    "browserify"
   ],
-  "author": "Mark Wubben (https://novemberborn.net/)",
+  "main": "./inherits.js",
+  "browser": "./inherits_browser.js",
+  "repository": "git://github.com/isaacs/inherits",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/novemberborn/ignore-by-default/issues"
+  "scripts": {
+    "test": "tap"
   },
-  "homepage": "https://github.com/novemberborn/ignore-by-default#readme",
   "devDependencies": {
-    "figures": "^1.4.0",
-    "standard": "^6.0.4"
-  }
+    "tap": "^14.2.4"
+  },
+  "files": [
+    "inherits.js",
+    "inherits_browser.js"
+  ]
 }

@@ -1,26 +1,42 @@
-# ignore-by-default
+Browser-friendly inheritance fully compatible with standard node.js
+[inherits](http://nodejs.org/api/util.html#util_util_inherits_constructor_superconstructor).
 
-This is a package aimed at Node.js development tools. It provides a list of
-directories that should probably be ignored by such tools, e.g. when watching
-for file changes.
+This package exports standard `inherits` from node.js `util` module in
+node environment, but also provides alternative browser-friendly
+implementation through [browser
+field](https://gist.github.com/shtylman/4339901). Alternative
+implementation is a literal copy of standard one located in standalone
+module to avoid requiring of `util`. It also has a shim for old
+browsers with no `Object.create` support.
 
-It's used by [AVA](https://www.npmjs.com/package/ava) and
-[nodemon](https://www.npmjs.com/package/nodemon).
+While keeping you sure you are using standard `inherits`
+implementation in node.js environment, it allows bundlers such as
+[browserify](https://github.com/substack/node-browserify) to not
+include full `util` package to your client code if all you need is
+just `inherits` function. It worth, because browser shim for `util`
+package is large and `inherits` is often the single function you need
+from it.
 
-[Please contribute!](./CONTRIBUTING.md)
+It's recommended to use this package instead of
+`require('util').inherits` for any code that has chances to be used
+not only in node.js but in browser too.
 
-## Installation
-
-```
-npm install --save ignore-by-default
-```
-
-## Usage
-
-The `ignore-by-default` module exports a `directories()` function, which will
-return an array of directory names. These are the ones you should ignore.
+## usage
 
 ```js
-// ['.git', '.sass_cache', …]
-var ignoredDirectories = require('ignore-by-default').directories()
+var inherits = require('inherits');
+// then use exactly as the standard one
 ```
+
+## note on version ~1.0
+
+Version ~1.0 had completely different motivation and is not compatible
+neither with 2.0 nor with standard node.js `inherits`.
+
+If you are using version ~1.0 and planning to switch to ~2.0, be
+careful:
+
+* new version uses `super_` instead of `super` for referencing
+  superclass
+* new version overwrites current prototype while old one preserves any
+  existing fields on it
