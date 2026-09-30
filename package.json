@@ -1,68 +1,76 @@
 {
-  "name": "balanced-match",
-  "description": "Match balanced character pairs, like \"{\" and \"}\"",
-  "version": "4.0.4",
-  "files": [
-    "dist"
+  "name": "bcryptjs",
+  "description": "Optimized bcrypt in plain JavaScript with zero dependencies, with TypeScript support. Compatible to 'bcrypt'.",
+  "version": "3.0.3",
+  "author": "Daniel Wirtz <dcode@dcode.io>",
+  "contributors": [
+    "Shane Girish <shaneGirish@gmail.com> (https://github.com/shaneGirish)",
+    "Alex Murray <> (https://github.com/alexmurray)",
+    "Nicolas Pelletier <> (https://github.com/NicolasPelletier)",
+    "Josh Rogers <> (https://github.com/geekymole)",
+    "Noah Isaacson <noah@nisaacson.com> (https://github.com/nisaacson)"
   ],
   "repository": {
-    "type": "git",
-    "url": "git://github.com/juliangruber/balanced-match.git"
+    "type": "url",
+    "url": "https://github.com/dcodeIO/bcrypt.js.git"
   },
+  "bugs": {
+    "url": "https://github.com/dcodeIO/bcrypt.js/issues"
+  },
+  "keywords": [
+    "bcrypt",
+    "password",
+    "auth",
+    "authentication",
+    "encryption",
+    "crypt",
+    "crypto"
+  ],
+  "type": "module",
+  "main": "umd/index.js",
+  "types": "umd/index.d.ts",
   "exports": {
-    "./package.json": "./package.json",
     ".": {
       "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
+        "types": "./index.d.ts",
+        "default": "./index.js"
       },
       "require": {
-        "types": "./dist/commonjs/index.d.ts",
-        "default": "./dist/commonjs/index.js"
+        "types": "./umd/index.d.ts",
+        "default": "./umd/index.js"
       }
     }
   },
-  "type": "module",
+  "bin": {
+    "bcrypt": "bin/bcrypt"
+  },
+  "license": "BSD-3-Clause",
   "scripts": {
-    "preversion": "npm test",
-    "postversion": "npm publish",
-    "prepublishOnly": "git push origin --follow-tags",
-    "prepare": "tshy",
-    "pretest": "npm run prepare",
-    "presnap": "npm run prepare",
-    "test": "tap",
-    "snap": "tap",
+    "build": "node scripts/build.js",
+    "lint": "prettier --check .",
     "format": "prettier --write .",
-    "benchmark": "node benchmark/index.js",
-    "typedoc": "typedoc --tsconfig .tshy/esm.json ./src/*.ts"
+    "test": "npm run test:unit && npm run test:typescript",
+    "test:unit": "node tests",
+    "test:typescript": "tsc --project tests/typescript/tsconfig.esnext.json && tsc --project tests/typescript/tsconfig.nodenext.json && tsc --project tests/typescript/tsconfig.commonjs.json && tsc --project tests/typescript/tsconfig.global.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "types.d.ts",
+    "umd/index.js",
+    "umd/index.d.ts",
+    "umd/types.d.ts",
+    "umd/package.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "browser": {
+    "crypto": false
   },
   "devDependencies": {
-    "@types/brace-expansion": "^1.1.2",
-    "@types/node": "^25.2.1",
-    "mkdirp": "^3.0.1",
-    "prettier": "^3.3.2",
-    "tap": "^21.6.2",
-    "tshy": "^3.0.2",
-    "typedoc": "^0.28.5"
-  },
-  "keywords": [
-    "match",
-    "regexp",
-    "test",
-    "balanced",
-    "parse"
-  ],
-  "license": "MIT",
-  "engines": {
-    "node": "18 || 20 || >=22"
-  },
-  "tshy": {
-    "exports": {
-      "./package.json": "./package.json",
-      ".": "./src/index.ts"
-    }
-  },
-  "main": "./dist/commonjs/index.js",
-  "types": "./dist/commonjs/index.d.ts",
-  "module": "./dist/esm/index.js"
+    "bcrypt": "^5.1.1",
+    "esm2umd": "^0.3.1",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.3"
+  }
 }
