@@ -1,70 +1,37 @@
 {
-  "name": "jsonwebtoken",
-  "version": "9.0.3",
-  "description": "JSON Web Token implementation (symmetric and asymmetric)",
+  "name": "jwa",
+  "version": "2.0.1",
+  "description": "JWA implementation (supports all JWS algorithms)",
   "main": "index.js",
-  "nyc": {
-    "check-coverage": true,
-    "lines": 95,
-    "statements": 95,
-    "functions": 100,
-    "branches": 95,
-    "exclude": [
-      "./test/**"
-    ],
-    "reporter": [
-      "json",
-      "lcov",
-      "text-summary"
-    ]
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "buffer-equal-constant-time": "^1.0.1",
+    "ecdsa-sig-formatter": "1.0.11",
+    "safe-buffer": "^5.0.1"
+  },
+  "devDependencies": {
+    "base64url": "^2.0.0",
+    "jwk-to-pem": "^2.0.1",
+    "semver": "4.3.6",
+    "tap": "6.2.0"
   },
   "scripts": {
-    "lint": "eslint .",
-    "coverage": "nyc mocha --use_strict",
-    "test": "mocha"
+    "test": "make test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/auth0/node-jsonwebtoken"
+    "url": "git://github.com/brianloveswords/node-jwa.git"
   },
   "keywords": [
-    "jwt"
+    "jwa",
+    "jws",
+    "jwt",
+    "rsa",
+    "ecdsa",
+    "hmac"
   ],
-  "author": "auth0",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/auth0/node-jsonwebtoken/issues"
-  },
-  "dependencies": {
-    "jws": "^4.0.1",
-    "lodash.includes": "^4.3.0",
-    "lodash.isboolean": "^3.0.3",
-    "lodash.isinteger": "^4.0.4",
-    "lodash.isnumber": "^3.0.3",
-    "lodash.isplainobject": "^4.0.6",
-    "lodash.isstring": "^4.0.1",
-    "lodash.once": "^4.0.0",
-    "ms": "^2.1.1",
-    "semver": "^7.5.4"
-  },
-  "devDependencies": {
-    "atob": "^2.1.2",
-    "chai": "^4.1.2",
-    "conventional-changelog": "~1.1.0",
-    "eslint": "^4.19.1",
-    "mocha": "^5.2.0",
-    "nsp": "^2.6.2",
-    "nyc": "^11.9.0",
-    "sinon": "^6.0.0"
-  },
-  "engines": {
-    "npm": ">=6",
-    "node": ">=12"
-  },
-  "files": [
-    "lib",
-    "decode.js",
-    "sign.js",
-    "verify.js"
-  ]
+  "author": "Brian J. Brennan <brianloveswords@gmail.com>",
+  "license": "MIT"
 }
