@@ -1,30 +1,65 @@
 'use strict';
 
-var callBind = require('call-bind-apply-helpers');
-var gOPD = require('gopd');
+/**
+ * Simplified lodash.get to work around the annoying null quirk. See:
+ * https://github.com/lodash/lodash/issues/3659
+ * @api private
+ */
 
-var hasProtoAccessor;
-try {
-	// eslint-disable-next-line no-extra-parens, no-proto
-	hasProtoAccessor = /** @type {{ __proto__?: typeof Array.prototype }} */ ([]).__proto__ === Array.prototype;
-} catch (e) {
-	if (!e || typeof e !== 'object' || !('code' in e) || e.code !== 'ERR_PROTO_ACCESS') {
-		throw e;
-	}
+module.exports = function get(obj, path, def) {
+  let parts;
+  let isPathArray = false;
+  if (typeof path === 'string') {
+    if (path.indexOf('.') === -1) {
+      const _v = getProperty(obj, path);
+      if (_v == null) {
+        return def;
+      }
+      return _v;
+    }
+
+    parts = path.split('.');
+  } else {
+    isPathArray = true;
+    parts = path;
+
+    if (parts.length === 1) {
+      const _v = getProperty(obj, parts[0]);
+      if (_v == null) {
+        return def;
+      }
+      return _v;
+    }
+  }
+  let rest = path;
+  let cur = obj;
+  for (const part of parts) {
+    if (cur == null) {
+      return def;
+    }
+
+    // `lib/cast.js` depends on being able to get dotted paths in updates,
+    // like `{ $set: { 'a.b': 42 } }`
+    if (!isPathArray && cur[rest] != null) {
+      return cur[rest];
+    }
+
+    cur = getProperty(cur, part);
+
+    if (!isPathArray) {
+      rest = rest.substring(part.length + 1);
+    }
+  }
+
+  return cur == null ? def : cur;
+};
+
+function getProperty(obj, prop) {
+  if (obj == null) {
+    return obj;
+  }
+  if (obj instanceof Map) {
+    return obj.get(prop);
+  }
+  return obj[prop];
 }
-
-// eslint-disable-next-line no-extra-parens
-var desc = !!hasProtoAccessor && gOPD && gOPD(Object.prototype, /** @type {keyof typeof Object.prototype} */ ('__proto__'));
-
-var $Object = Object;
-var $getPrototypeOf = $Object.getPrototypeOf;
-
-/** @type {import('./get')} */
-module.exports = desc && typeof desc.get === 'function'
-	? callBind([desc.get])
-	: typeof $getPrototypeOf === 'function'
-		? /** @type {import('./get')} */ function getDunder(value) {
-			// eslint-disable-next-line eqeqeq
-			return $getPrototypeOf(value == null ? value : $Object(value));
-		}
-		: false;
