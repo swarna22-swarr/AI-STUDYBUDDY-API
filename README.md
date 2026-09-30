@@ -1,18 +1,18 @@
-# lodash.isplainobject v4.0.6
+# lodash.isstring v4.0.1
 
-The [lodash](https://lodash.com/) method `_.isPlainObject` exported as a [Node.js](https://nodejs.org/) module.
+The [lodash](https://lodash.com/) method `_.isString` exported as a [Node.js](https://nodejs.org/) module.
 
 ## Installation
 
 Using npm:
 ```bash
 $ {sudo -H} npm i -g npm
-$ npm i --save lodash.isplainobject
+$ npm i --save lodash.isstring
 ```
 
 In Node.js:
 ```js
-var isPlainObject = require('lodash.isplainobject');
+var isString = require('lodash.isstring');
 ```
 
-See the [documentation](https://lodash.com/docs#isPlainObject) or [package source](https://github.com/lodash/lodash/blob/4.0.6-npm-packages/lodash.isplainobject) for more details.
+See the [documentation](https://lodash.com/docs#isString) or [package source](https://github.com/lodash/lodash/blob/4.0.1-npm-packages/lodash.isstring) for more details.
