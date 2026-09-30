@@ -1,22 +1,11 @@
-/**
- * @license
- * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-export * from "./content";
-export * from "./enums";
-export * from "./requests";
-export * from "./responses";
-export * from "./search-grounding";
-export { CachedContent, CachedContentBase } from "./server/caching";
+import type { createMemoryCodePoints } from './memory-code-points';
+declare function saslprep({ unassigned_code_points, commonly_mapped_to_nothing, non_ASCII_space_characters, prohibited_characters, bidirectional_r_al, bidirectional_l, }: ReturnType<typeof createMemoryCodePoints>, input: string, opts?: {
+    allowUnassigned?: boolean;
+}): string;
+declare namespace saslprep {
+    export var saslprep: typeof import(".");
+    var _a: typeof import(".");
+    export { _a as default };
+}
+export = saslprep;
+//# sourceMappingURL=index.d.ts.map
