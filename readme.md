@@ -1,34 +1,59 @@
-# is-binary-path [![Build Status](https://travis-ci.org/sindresorhus/is-binary-path.svg?branch=master)](https://travis-ci.org/sindresorhus/is-binary-path)
+# ms
 
-> Check if a file path is a binary file
+![CI](https://github.com/vercel/ms/workflows/CI/badge.svg)
 
+Use this package to easily convert various time formats to milliseconds.
 
-## Install
-
-```
-$ npm install is-binary-path
-```
-
-
-## Usage
+## Examples
 
 ```js
-const isBinaryPath = require('is-binary-path');
-
-isBinaryPath('source/unicorn.png');
-//=> true
-
-isBinaryPath('source/unicorn.txt');
-//=> false
+ms('2 days')  // 172800000
+ms('1d')      // 86400000
+ms('10h')     // 36000000
+ms('2.5 hrs') // 9000000
+ms('2h')      // 7200000
+ms('1m')      // 60000
+ms('5s')      // 5000
+ms('1y')      // 31557600000
+ms('100')     // 100
+ms('-3 days') // -259200000
+ms('-1h')     // -3600000
+ms('-200')    // -200
 ```
 
+### Convert from Milliseconds
 
-## Related
+```js
+ms(60000)             // "1m"
+ms(2 * 60000)         // "2m"
+ms(-3 * 60000)        // "-3m"
+ms(ms('10 hours'))    // "10h"
+```
 
-- [binary-extensions](https://github.com/sindresorhus/binary-extensions) - List of binary file extensions
-- [is-text-path](https://github.com/sindresorhus/is-text-path) - Check if a filepath is a text file
+### Time Format Written-Out
 
+```js
+ms(60000, { long: true })             // "1 minute"
+ms(2 * 60000, { long: true })         // "2 minutes"
+ms(-3 * 60000, { long: true })        // "-3 minutes"
+ms(ms('10 hours'), { long: true })    // "10 hours"
+```
 
-## License
+## Features
 
-MIT © [Sindre Sorhus](https://sindresorhus.com), [Paul Miller](https://paulmillr.com)
+- Works both in [Node.js](https://nodejs.org) and in the browser
+- If a number is supplied to `ms`, a string with a unit is returned
+- If a string that contains the number is supplied, it returns it as a number (e.g.: it returns `100` for `'100'`)
+- If you pass a string with a number and a valid unit, the number of equivalent milliseconds is returned
+
+## Related Packages
+
+- [ms.macro](https://github.com/knpwrs/ms.macro) - Run `ms` as a macro at build-time.
+
+## Caught a Bug?
+
+1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
+2. Link the package to the global module directory: `npm link`
+3. Within the module you want to test your local development instance of ms, just link it to the dependencies: `npm link ms`. Instead of the default one from npm, Node.js will now use your clone of ms!
+
+As always, you can run the tests using: `npm test`
