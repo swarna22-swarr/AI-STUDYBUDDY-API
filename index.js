@@ -1,7 +1,20 @@
-'use strict';
-const path = require('path');
-const binaryExtensions = require('binary-extensions');
+/*!
+ * is-extglob <https://github.com/jonschlinkert/is-extglob>
+ *
+ * Copyright (c) 2014-2016, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
 
-const extensions = new Set(binaryExtensions);
+module.exports = function isExtglob(str) {
+  if (typeof str !== 'string' || str === '') {
+    return false;
+  }
 
-module.exports = filePath => extensions.has(path.extname(filePath).slice(1).toLowerCase());
+  var match;
+  while ((match = /(\\).|([@?!+*]\(.*\))/g.exec(str))) {
+    if (match[2]) return true;
+    str = str.slice(match.index + match[0].length);
+  }
+
+  return false;
+};
