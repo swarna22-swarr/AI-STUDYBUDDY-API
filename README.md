@@ -1,528 +1,366 @@
-# minimatch
+# MongoDB Node.js Driver
 
-A minimal matching utility.
+The official [MongoDB](https://www.mongodb.com/) driver for Node.js.
 
-This is the matching library used internally by npm.
+**Upgrading to version 7? Take a look at our [upgrade guide here](https://github.com/mongodb/node-mongodb-native/blob/HEAD/etc/notes/CHANGES_7.0.0.md)!**
 
-It works by converting glob expressions into JavaScript `RegExp`
-objects.
+## Quick Links
 
-## Important Security Consideration!
+| Site                     | Link                                                                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Documentation            | [www.mongodb.com/docs/drivers/node](https://www.mongodb.com/docs/drivers/node)                                                        |
+| API Docs                 | [mongodb.github.io/node-mongodb-native](https://mongodb.github.io/node-mongodb-native)                                                |
+| `npm` package            | [www.npmjs.com/package/mongodb](https://www.npmjs.com/package/mongodb)                                                                |
+| MongoDB                  | [www.mongodb.com](https://www.mongodb.com)                                                                                            |
+| MongoDB University       | [learn.mongodb.com](https://learn.mongodb.com/catalog?labels=%5B%22Language%22%5D&values=%5B%22Node.js%22%5D)                         |
+| MongoDB Developer Center | [www.mongodb.com/developer](https://www.mongodb.com/developer/languages/javascript/)                                                  |
+| Stack Overflow           | [stackoverflow.com](https://stackoverflow.com/search?q=%28%5Btypescript%5D+or+%5Bjavascript%5D+or+%5Bnode.js%5D%29+and+%5Bmongodb%5D) |
+| Source Code              | [github.com/mongodb/node-mongodb-native](https://github.com/mongodb/node-mongodb-native)                                              |
+| Upgrade to v7            | [etc/notes/CHANGES_7.0.0.md](https://github.com/mongodb/node-mongodb-native/blob/HEAD/etc/notes/CHANGES_7.0.0.md)                     |
+| Contributing             | [CONTRIBUTING.md](https://github.com/mongodb/node-mongodb-native/blob/HEAD/CONTRIBUTING.md)                                           |
+| Changelog                | [HISTORY.md](https://github.com/mongodb/node-mongodb-native/blob/HEAD/HISTORY.md)                                                     |
 
-> [!WARNING]  
-> This library uses JavaScript regular expressions. Please read
-> the following warning carefully, and be thoughtful about what
-> you provide to this library in production systems.
+### Release Integrity
 
-_Any_ library in JavaScript that deals with matching string
-patterns using regular expressions will be subject to
-[ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
-if the pattern is generated using untrusted input.
+Releases are created automatically and signed using the [Node team's GPG key](https://pgp.mongodb.com/node-driver.asc). This applies to the git tag as well as all release packages provided as part of a GitHub release. To verify the provided packages, download the key and import it using gpg:
 
-Efforts have been made to mitigate risk as much as is feasible in
-such a library, providing maximum recursion depths and so forth,
-but these measures can only ultimately protect against accidents,
-not malice. A dedicated attacker can _always_ find patterns that
-cannot be defended against by a bash-compatible glob pattern
-matching system that uses JavaScript regular expressions.
+```shell
+gpg --import node-driver.asc
+```
 
-To be extremely clear:
+The GitHub release contains a detached signature file for the NPM package (named
+`mongodb-X.Y.Z.tgz.sig`).
 
-> [!WARNING]  
-> **If you create a system where you take user input, and use
-> that input as the source of a Regular Expression pattern, in
-> this or any extant glob matcher in JavaScript, you will be
-> pwned.**
+The following command returns the link npm package.
 
-A future version of this library _may_ use a different matching
-algorithm which does not exhibit backtracking problems. If and
-when that happens, it will likely be a sweeping change, and those
-improvements will **not** be backported to legacy versions.
+```shell
+npm view mongodb@vX.Y.Z dist.tarball
+```
 
-In the near term, it is not reasonable to continue to play
-whack-a-mole with security advisories, and so any future ReDoS
-reports will be considered "working as intended", and resolved
-entirely by this warning.
+Using the result of the above command, a `curl` command can return the official npm package for the release.
 
-## Usage
+To verify the integrity of the downloaded package, run the following command:
+
+```shell
+gpg --verify mongodb-X.Y.Z.tgz.sig mongodb-X.Y.Z.tgz
+```
+
+> [!Note]
+> No verification is done when using npm to install the package. The contents of the Github tarball and npm's tarball are identical.
+
+The MongoDB Node.js driver follows [semantic versioning](https://semver.org/) for its releases.
+
+### Bugs / Feature Requests
+
+Think you’ve found a bug? Want to see a new feature in `node-mongodb-native`? Please open a
+case in our issue management tool, JIRA:
+
+- Create an account and login [jira.mongodb.org](https://jira.mongodb.org).
+- Navigate to the NODE project [jira.mongodb.org/browse/NODE](https://jira.mongodb.org/browse/NODE).
+- Click **Create Issue** - Please provide as much information as possible about the issue type and how to reproduce it.
+
+Bug reports in JIRA for all driver projects (i.e. NODE, PYTHON, CSHARP, JAVA) and the
+Core Server (i.e. SERVER) project are **public**.
+
+### Support / Feedback
+
+For issues with, questions about, or feedback for the Node.js driver, please look into our [support channels](https://www.mongodb.com/docs/manual/support). Please do not email any of the driver developers directly with issues or questions - you're more likely to get an answer on the [MongoDB Community Forums](https://community.mongodb.com/tags/c/drivers-odms-connectors/7/node-js-driver).
+
+### Change Log
+
+Change history can be found in [`HISTORY.md`](https://github.com/mongodb/node-mongodb-native/blob/HEAD/HISTORY.md).
+
+### Compatibility
+
+The driver currently supports 4.2+ servers.
+
+For exhaustive server and runtime version compatibility matrices, please refer to the following links:
+
+- [MongoDB](https://www.mongodb.com/docs/drivers/node/current/compatibility/#mongodb-compatibility)
+- [NodeJS](https://www.mongodb.com/docs/drivers/node/current/compatibility/#language-compatibility)
+
+#### Component Support Matrix
+
+The following table describes add-on component version compatibility for the Node.js driver. Only packages with versions in these supported ranges are stable when used in combination.
+
+| Component                                                                            | `mongodb@3.x`      | `mongodb@4.x`      | `mongodb@5.x`      | `mongodb@<6.12` | `mongodb@>=6.12`   | `mongodb@7.x` |
+| ------------------------------------------------------------------------------------ | ------------------ | ------------------ | ------------------ | --------------- | ------------------ | ------------- |
+| [bson](https://www.npmjs.com/package/bson)                                           | ^1.0.0             | ^4.0.0             | ^5.0.0             | ^6.0.0          | ^6.0.0             | ^7.0.0        |
+| [bson-ext](https://www.npmjs.com/package/bson-ext)                                   | ^1.0.0 \|\| ^2.0.0 | ^4.0.0             | N/A                | N/A             | N/A                | N/A           |
+| [kerberos](https://www.npmjs.com/package/kerberos)                                   | ^1.0.0             | ^1.0.0 \|\| ^2.0.0 | ^1.0.0 \|\| ^2.0.0 | ^2.0.1          | ^2.0.1             | ^7.0.0        |
+| [mongodb-client-encryption](https://www.npmjs.com/package/mongodb-client-encryption) | ^1.0.0             | ^1.0.0 \|\| ^2.0.0 | ^2.3.0             | ^6.0.0          | ^6.0.0             | ^7.0.0        |
+| [mongodb-legacy](https://www.npmjs.com/package/mongodb-legacy)                       | N/A                | ^4.0.0             | ^5.0.0             | ^6.0.0          | ^6.0.0             | N/A           |
+| [@mongodb-js/zstd](https://www.npmjs.com/package/@mongodb-js/zstd)                   | N/A                | ^1.0.0             | ^1.0.0             | ^1.1.0          | ^1.1.0 \|\| ^2.0.0 | ^7.0.0        |
+
+#### Typescript Version
+
+We recommend using the latest version of typescript, however we currently ensure the driver's public types compile against `typescript@5.6.0`.
+This is the lowest typescript version guaranteed to work with our driver: older versions may or may not work - use at your own risk.
+Since typescript [does not restrict breaking changes to major versions](https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes), we consider this support best effort.
+If you run into any unexpected compiler failures against our supported TypeScript versions, please let us know by filing an issue on our [JIRA](https://jira.mongodb.org/browse/NODE).
+
+Additionally, our Typescript types are compatible with the ECMAScript standard for our minimum supported Node version. Currently, our Typescript targets es2023.
+
+#### Running in Custom Runtimes
+
+We are working on removing Node.js as a dependency of the driver, so that in the future it will be possible to use the driver in non-Node environments.
+This work is currently in progress, and if you're curious, this is [our first runtime adapter commit](https://github.com/mongodb/node-mongodb-native/commit/d2ad07f20903d86334da81222a6df9717f76faaa).
+
+Some things to keep in mind if you are using a non-Node runtime:
+
+1. Users of Webpack/Vite may need to prevent `crypto` polyfill injection.
+2. Auth mechanism `SCRAM-SHA-1` has a hard dependency on Node.js.
+3. Auth mechanism `SCRAM-SHA-1` is not supported in FIPS mode.
+
+## Installation
+
+The recommended way to get started using the Node.js driver is by using the `npm` (Node Package Manager) to install the dependency in your project.
+
+After you've created your own project using `npm init`, you can run:
+
+```bash
+npm install mongodb
+```
+
+This will download the MongoDB driver and add a dependency entry in your `package.json` file.
+
+If you are a Typescript user, you will need the Node.js type definitions to use the driver's definitions:
+
+```sh
+npm install -D @types/node
+```
+
+## Driver Extensions
+
+The MongoDB driver can optionally be enhanced by the following feature packages:
+
+Maintained by MongoDB:
+
+- Zstd network compression - [@mongodb-js/zstd](https://github.com/mongodb-js/zstd)
+- MongoDB field level and queryable encryption - [mongodb-client-encryption](https://github.com/mongodb/libmongocrypt#readme)
+- GSSAPI / SSPI / Kerberos authentication - [kerberos](https://github.com/mongodb-js/kerberos)
+
+Some of these packages include native C++ extensions.
+Consult the [trouble shooting guide here](https://github.com/mongodb/node-mongodb-native/blob/HEAD/etc/notes/native-extensions.md) if you run into compilation issues.
+
+Third party:
+
+- Snappy network compression - [snappy](https://github.com/Brooooooklyn/snappy)
+- AWS authentication - [@aws-sdk/credential-providers](https://github.com/aws/aws-sdk-js-v3/tree/main/packages/credential-providers)
+
+## Quick Start
+
+This guide will show you how to set up a simple application using Node.js and MongoDB. Its scope is only how to set up the driver and perform the simple CRUD operations. For more in-depth coverage, see the [official documentation](https://www.mongodb.com/docs/drivers/node/).
+
+### Create the `package.json` file
+
+First, create a directory where your application will live.
+
+```bash
+mkdir myProject
+cd myProject
+```
+
+Enter the following command and answer the questions to create the initial structure for your new project:
+
+```bash
+npm init -y
+```
+
+Next, install the driver as a dependency.
+
+```bash
+npm install mongodb
+```
+
+### Start a MongoDB Server
+
+For complete MongoDB installation instructions, see [the manual](https://www.mongodb.com/docs/manual/installation/).
+
+1. Download the right MongoDB version from [MongoDB](https://www.mongodb.org/downloads)
+2. Create a database directory (in this case under **/data**).
+3. Install and start a `mongod` process.
+
+```bash
+mongod --dbpath=/data
+```
+
+You should see the **mongod** process start up and print some status information.
+
+### Connect to MongoDB
+
+Create a new **app.js** file and add the following code to try out some basic CRUD
+operations using the MongoDB driver.
+
+Add code to connect to the server and the database **myProject**:
+
+> **NOTE:** Resolving DNS Connection issues
+>
+> Node.js 18 changed the default DNS resolution ordering from always prioritizing IPv4 to the ordering
+> returned by the DNS provider. In some environments, this can result in `localhost` resolving to
+> an IPv6 address instead of IPv4 and a consequent failure to connect to the server.
+>
+> This can be resolved by:
+>
+> - specifying the IP address family using the MongoClient `family` option (`MongoClient(<uri>, { family: 4 } )`)
+> - launching mongod or mongos with the ipv6 flag enabled ([--ipv6 mongod option documentation](https://www.mongodb.com/docs/manual/reference/program/mongod/#std-option-mongod.--ipv6))
+> - using a host of `127.0.0.1` in place of localhost
+> - specifying the DNS resolution ordering with the `--dns-resolution-order` Node.js command line argument (e.g. `node --dns-resolution-order=ipv4first`)
 
 ```js
-// hybrid module, load with require() or import
-import { minimatch } from 'minimatch'
-// or:
-const { minimatch } = require('minimatch')
+const { MongoClient } = require('mongodb');
+// or as an es module:
+// import { MongoClient } from 'mongodb'
 
-minimatch('bar.foo', '*.foo') // true!
-minimatch('bar.foo', '*.bar') // false!
-minimatch('bar.foo', '*.+(bar|foo)', { debug: true }) // true, and noisy!
+// Connection URL
+const url = 'mongodb://localhost:27017';
+const client = new MongoClient(url);
+
+// Database Name
+const dbName = 'myProject';
+
+async function main() {
+  // Use connect method to connect to the server
+  await client.connect();
+  console.log('Connected successfully to server');
+  const db = client.db(dbName);
+  const collection = db.collection('documents');
+
+  // the following code examples can be pasted here...
+
+  return 'done.';
+}
+
+main()
+  .then(console.log)
+  .catch(console.error)
+  .finally(() => client.close());
 ```
 
-## Features
+Run your app from the command line with:
 
-Supports these glob features:
-
-- Brace Expansion
-- Extended glob matching
-- "Globstar" `**` matching
-- [Posix character
-  classes](https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html),
-  like `[[:alpha:]]`, supporting the full range of Unicode
-  characters. For example, `[[:alpha:]]` will match against
-  `'é'`, though `[a-zA-Z]` will not. Collating symbol and set
-  matching is not supported, so `[[=e=]]` will _not_ match `'é'`
-  and `[[.ch.]]` will not match `'ch'` in locales where `ch` is
-  considered a single character.
-
-See:
-
-- `man sh`
-- `man bash` [Pattern
-  Matching](https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html)
-- `man 3 fnmatch`
-- `man 5 gitignore`
-
-## Windows
-
-**Please only use forward-slashes in glob expressions.**
-
-Though windows uses either `/` or `\` as its path separator, only `/`
-characters are used by this glob implementation. You must use
-forward-slashes **only** in glob expressions. Back-slashes in patterns
-will always be interpreted as escape characters, not path separators.
-
-Note that `\` or `/` _will_ be interpreted as path separators in paths on
-Windows, and will match against `/` in glob expressions.
-
-So just always use `/` in patterns.
-
-### UNC Paths
-
-On Windows, UNC paths like `//?/c:/...` or
-`//ComputerName/Share/...` are handled specially.
-
-- Patterns starting with a double-slash followed by some
-  non-slash characters will preserve their double-slash. As a
-  result, a pattern like `//*` will match `//x`, but not `/x`.
-- Patterns staring with `//?/<drive letter>:` will _not_ treat
-  the `?` as a wildcard character. Instead, it will be treated
-  as a normal string.
-- Patterns starting with `//?/<drive letter>:/...` will match
-  file paths starting with `<drive letter>:/...`, and vice versa,
-  as if the `//?/` was not present. This behavior only is
-  present when the drive letters are a case-insensitive match to
-  one another. The remaining portions of the path/pattern are
-  compared case sensitively, unless `nocase:true` is set.
-
-Note that specifying a UNC path using `\` characters as path
-separators is always allowed in the file path argument, but only
-allowed in the pattern argument when `windowsPathsNoEscape: true`
-is set in the options.
-
-## Minimatch Class
-
-Create a minimatch object by instantiating the `minimatch.Minimatch` class.
-
-```javascript
-var Minimatch = require('minimatch').Minimatch
-var mm = new Minimatch(pattern, options)
+```bash
+node app.js
 ```
 
-### Properties
+The application should print **Connected successfully to server** to the console.
 
-- `pattern` The original pattern the minimatch object represents.
-- `options` The options supplied to the constructor.
-- `set` A 2-dimensional array of regexp or string expressions.
-  Each row in the
-  array corresponds to a brace-expanded pattern. Each item in the row
-  corresponds to a single path-part. For example, the pattern
-  `{a,b/c}/d` would expand to a set of patterns like:
+### Insert a Document
 
-        [ [ a, d ]
-        , [ b, c, d ] ]
-
-  If a portion of the pattern doesn't have any "magic" in it
-  (that is, it's something like `"foo"` rather than `fo*o?`), then it
-  will be left as a string rather than converted to a regular
-  expression.
-
-- `regexp` Created by the `makeRe` method. A single regular expression
-  expressing the entire pattern. This is useful in cases where you wish
-  to use the pattern somewhat like `fnmatch(3)` with `FNM_PATH` enabled.
-- `negate` True if the pattern is negated.
-- `comment` True if the pattern is a comment.
-- `empty` True if the pattern is `""`.
-
-### Methods
-
-- `makeRe()` Generate the `regexp` member if necessary, and return it.
-  Will return `false` if the pattern is invalid.
-- `match(fname)` Return true if the filename matches the pattern, or
-  false otherwise.
-- `matchOne(fileArray, patternArray, partial)` Take a `/`-split
-  filename, and match it against a single row in the `regExpSet`. This
-  method is mainly for internal use, but is exposed so that it can be
-  used by a glob-walker that needs to avoid excessive filesystem calls.
-- `hasMagic()` Returns true if the parsed pattern contains any
-  magic characters. Returns false if all comparator parts are
-  string literals. If the `magicalBraces` option is set on the
-  constructor, then it will consider brace expansions which are
-  not otherwise magical to be magic. If not set, then a pattern
-  like `a{b,c}d` will return `false`, because neither `abd` nor
-  `acd` contain any special glob characters.
-
-  This does **not** mean that the pattern string can be used as a
-  literal filename, as it may contain magic glob characters that
-  are escaped. For example, the pattern `\\*` or `[*]` would not
-  be considered to have magic, as the matching portion parses to
-  the literal string `'*'` and would match a path named `'*'`,
-  not `'\\*'` or `'[*]'`. The `minimatch.unescape()` method may
-  be used to remove escape characters.
-
-All other methods are internal, and will be called as necessary.
-
-### minimatch(path, pattern, options)
-
-Main export. Tests a path against the pattern using the options.
-
-```javascript
-var isJS = minimatch(file, '*.js', { matchBase: true })
-```
-
-### minimatch.filter(pattern, options)
-
-Returns a function that tests its
-supplied argument, suitable for use with `Array.filter`. Example:
-
-```javascript
-var javascripts = fileList.filter(
-  minimatch.filter('*.js', { matchBase: true }),
-)
-```
-
-### minimatch.escape(pattern, options = {})
-
-Escape all magic characters in a glob pattern, so that it will
-only ever match literal strings.
-
-If the `windowsPathsNoEscape` option is used, then characters are
-escaped by wrapping in `[]`, because a magic character wrapped in
-a character class can only be satisfied by that exact character.
-
-Slashes (and backslashes in `windowsPathsNoEscape` mode) cannot
-be escaped or unescaped.
-
-### minimatch.unescape(pattern, options = {})
-
-Un-escape a glob string that may contain some escaped characters.
-
-If the `windowsPathsNoEscape` option is used, then square-brace
-escapes are removed, but not backslash escapes. For example, it
-will turn the string `'[*]'` into `*`, but it will not turn
-`'\\*'` into `'*'`, because `\` is a path separator in
-`windowsPathsNoEscape` mode.
-
-When `windowsPathsNoEscape` is not set, then both brace escapes
-and backslash escapes are removed.
-
-Slashes (and backslashes in `windowsPathsNoEscape` mode) cannot
-be escaped or unescaped.
-
-### minimatch.match(list, pattern, options)
-
-Match against the list of
-files, in the style of fnmatch or glob. If nothing is matched, and
-options.nonull is set, then return a list containing the pattern itself.
-
-```javascript
-var javascripts = minimatch.match(fileList, '*.js', { matchBase: true })
-```
-
-### minimatch.makeRe(pattern, options)
-
-Make a regular expression object from the pattern.
-
-## Options
-
-All options are `false` by default.
-
-### debug
-
-Dump a ton of stuff to stderr.
-
-### nobrace
-
-Do not expand `{a,b}` and `{1..3}` brace sets.
-
-### noglobstar
-
-Disable `**` matching against multiple folder names.
-
-### dot
-
-Allow patterns to match filenames starting with a period, even if
-the pattern does not explicitly have a period in that spot.
-
-Note that by default, `a/**/b` will **not** match `a/.d/b`, unless `dot`
-is set.
-
-### noext
-
-Disable "extglob" style patterns like `+(a|b)`.
-
-### nocase
-
-Perform a case-insensitive match.
-
-### nocaseMagicOnly
-
-When used with `{nocase: true}`, create regular expressions that
-are case-insensitive, but leave string match portions untouched.
-Has no effect when used without `{nocase: true}`.
-
-Useful when some other form of case-insensitive matching is used,
-or if the original string representation is useful in some other
-way.
-
-### nonull
-
-When a match is not found by `minimatch.match`, return a list containing
-the pattern itself if this option is set. When not set, an empty list
-is returned if there are no matches.
-
-### magicalBraces
-
-This only affects the results of the `Minimatch.hasMagic` method.
-
-If the pattern contains brace expansions, such as `a{b,c}d`, but
-no other magic characters, then the `Minimatch.hasMagic()` method
-will return `false` by default. When this option set, it will
-return `true` for brace expansion as well as other magic glob
-characters.
-
-### matchBase
-
-If set, then patterns without slashes will be matched
-against the basename of the path if it contains slashes. For example,
-`a?b` would match the path `/xyz/123/acb`, but not `/xyz/acb/123`.
-
-### nocomment
-
-Suppress the behavior of treating `#` at the start of a pattern as a
-comment.
-
-### nonegate
-
-Suppress the behavior of treating a leading `!` character as negation.
-
-### flipNegate
-
-Returns from negate expressions the same as if they were not negated.
-(Ie, true on a hit, false on a miss.)
-
-### partial
-
-Compare a partial path to a pattern. As long as the parts of the path that
-are present are not contradicted by the pattern, it will be treated as a
-match. This is useful in applications where you're walking through a
-folder structure, and don't yet have the full path, but want to ensure that
-you do not walk down paths that can never be a match.
-
-For example,
+Add to **app.js** the following function which uses the **insertMany**
+method to add three documents to the **documents** collection.
 
 ```js
-minimatch('/a/b', '/a/*/c/d', { partial: true }) // true, might be /a/b/c/d
-minimatch('/a/b', '/**/d', { partial: true }) // true, might be /a/b/.../d
-minimatch('/x/y/z', '/a/**/z', { partial: true }) // false, because x !== a
+const insertResult = await collection.insertMany([{ a: 1 }, { a: 2 }, { a: 3 }]);
+console.log('Inserted documents =>', insertResult);
 ```
 
-### windowsPathsNoEscape
+The **insertMany** command returns an object with information about the insert operations.
 
-Use `\\` as a path separator _only_, and _never_ as an escape
-character. If set, all `\\` characters are replaced with `/` in
-the pattern. Note that this makes it **impossible** to match
-against paths containing literal glob pattern characters, but
-allows matching with patterns constructed using `path.join()` and
-`path.resolve()` on Windows platforms, mimicking the (buggy!)
-behavior of earlier versions on Windows. Please use with
-caution, and be mindful of [the caveat about Windows
-paths](#windows).
+### Find All Documents
 
-For legacy reasons, this is also set if
-`options.allowWindowsEscape` is set to the exact value `false`.
+Add a query that returns all the documents.
 
-### windowsNoMagicRoot
+```js
+const findResult = await collection.find({}).toArray();
+console.log('Found documents =>', findResult);
+```
 
-When a pattern starts with a UNC path or drive letter, and in
-`nocase:true` mode, do not convert the root portions of the
-pattern into a case-insensitive regular expression, and instead
-leave them as strings.
+This query returns all the documents in the **documents** collection.
+If you add this below the insertMany example, you'll see the documents you've inserted.
 
-This is the default when the platform is `win32` and
-`nocase:true` is set.
+### Find Documents with a Query Filter
 
-### preserveMultipleSlashes
+Add a query filter to find only documents which meet the query criteria.
 
-By default, multiple `/` characters (other than the leading `//`
-in a UNC path, see "UNC Paths" above) are treated as a single
-`/`.
+```js
+const filteredDocs = await collection.find({ a: 3 }).toArray();
+console.log('Found documents filtered by { a: 3 } =>', filteredDocs);
+```
 
-That is, a pattern like `a///b` will match the file path `a/b`.
+Only the documents which match `'a' : 3` should be returned.
 
-Set `preserveMultipleSlashes: true` to suppress this behavior.
+### Update a document
 
-### optimizationLevel
+The following operation updates a document in the **documents** collection.
 
-A number indicating the level of optimization that should be done
-to the pattern prior to parsing and using it for matches.
+```js
+const updateResult = await collection.updateOne({ a: 3 }, { $set: { b: 1 } });
+console.log('Updated documents =>', updateResult);
+```
 
-Globstar parts `**` are always converted to `*` when `noglobstar`
-is set, and multiple adjacent `**` parts are converted into a
-single `**` (ie, `a/**/**/b` will be treated as `a/**/b`, as this
-is equivalent in all cases).
+The method updates the first document where the field **a** is equal to **3** by adding a new field **b** to the document set to **1**. `updateResult` contains information about whether there was a matching document to update or not.
 
-- `0` - Make no further changes. In this mode, `.` and `..` are
-  maintained in the pattern, meaning that they must also appear
-  in the same position in the test path string. Eg, a pattern
-  like `a/*/../c` will match the string `a/b/../c` but not the
-  string `a/c`.
-- `1` - (default) Remove cases where a double-dot `..` follows a
-  pattern portion that is not `**`, `.`, `..`, or empty `''`. For
-  example, the pattern `./a/b/../*` is converted to `./a/*`, and
-  so it will match the path string `./a/c`, but not the path
-  string `./a/b/../c`. Dots and empty path portions in the
-  pattern are preserved.
-- `2` (or higher) - Much more aggressive optimizations, suitable
-  for use with file-walking cases:
-  - Remove cases where a double-dot `..` follows a pattern
-    portion that is not `**`, `.`, or empty `''`. Remove empty
-    and `.` portions of the pattern, where safe to do so (ie,
-    anywhere other than the last position, the first position, or
-    the second position in a pattern starting with `/`, as this
-    may indicate a UNC path on Windows).
-  - Convert patterns containing `<pre>/**/../<p>/<rest>` into the
-    equivalent `<pre>/{..,**}/<p>/<rest>`, where `<p>` is a
-    a pattern portion other than `.`, `..`, `**`, or empty
-    `''`.
-  - Dedupe patterns where a `**` portion is present in one and
-    omitted in another, and it is not the final path portion, and
-    they are otherwise equivalent. So `{a/**/b,a/b}` becomes
-    `a/**/b`, because `**` matches against an empty path portion.
-  - Dedupe patterns where a `*` portion is present in one, and a
-    non-dot pattern other than `**`, `.`, `..`, or `''` is in the
-    same position in the other. So `a/{*,x}/b` becomes `a/*/b`,
-    because `*` can match against `x`.
+### Remove a document
 
-  While these optimizations improve the performance of
-  file-walking use cases such as [glob](http://npm.im/glob) (ie,
-  the reason this module exists), there are cases where it will
-  fail to match a literal string that would have been matched in
-  optimization level 1 or 0.
+Remove the document where the field **a** is equal to **3**.
 
-  Specifically, while the `Minimatch.match()` method will
-  optimize the file path string in the same ways, resulting in
-  the same matches, it will fail when tested with the regular
-  expression provided by `Minimatch.makeRe()`, unless the path
-  string is first processed with
-  `minimatch.levelTwoFileOptimize()` or similar.
+```js
+const deleteResult = await collection.deleteMany({ a: 3 });
+console.log('Deleted documents =>', deleteResult);
+```
 
-### platform
+### Index a Collection
 
-When set to `win32`, this will trigger all windows-specific
-behaviors (special handling for UNC paths, and treating `\` as
-separators in file paths for comparison.)
+[Indexes](https://www.mongodb.com/docs/manual/indexes/) can improve your application's
+performance. The following function creates an index on the **a** field in the
+**documents** collection.
 
-Defaults to the value of `process.platform`.
+```js
+const indexName = await collection.createIndex({ a: 1 });
+console.log('index name =', indexName);
+```
 
-### maxGlobstarRecursion
+For more detailed information, see the [indexing strategies page](https://www.mongodb.com/docs/manual/applications/indexes/).
 
-Max number of non-adjacent `**` patterns to recursively walk
-down.
+## Error Handling
 
-The default of `200` is almost certainly high enough for most
-purposes, and can handle absurdly excessive patterns.
+If you need to filter certain errors from our driver, we have a helpful tree of errors described in [etc/notes/errors.md](https://github.com/mongodb/node-mongodb-native/blob/HEAD/etc/notes/errors.md).
 
-If the limit is exceeded (which would require very excessively
-long patterns and paths containing lots of `**` patterns!), then
-it is treated as non-matching, even if the path would normally
-match the pattern provided.
+It is our recommendation to use `instanceof` checks on errors and to avoid relying on parsing `error.message` and `error.name` strings in your code.
+We guarantee `instanceof` checks will pass according to semver guidelines, but errors may be sub-classed or their messages may change at any time, even patch releases, as we see fit to increase the helpfulness of the errors.
 
-That is, this is an intentional false negative, deemed an
-acceptable break in correctness for security and performance.
+Any new errors we add to the driver will directly extend an existing error class and no existing error will be moved to a different parent class outside of a major release.
+This means `instanceof` will always be able to accurately capture the errors that our driver throws.
 
-### maxExtglobRecursion
+```typescript
+const client = new MongoClient(url);
+await client.connect();
+const collection = client.db().collection('collection');
 
-Max depth to traverse for nested extglobs like `*(a|b|c)`
+try {
+  await collection.insertOne({ _id: 1 });
+  await collection.insertOne({ _id: 1 }); // duplicate key error
+} catch (error) {
+  if (error instanceof MongoServerError) {
+    console.log(`Error worth logging: ${error}`); // special case for some reason
+  }
+  throw error; // still want to crash
+}
+```
 
-Default is 2, which is quite low, but any higher value swiftly
-results in punishing performance impacts. Note that this is _not_
-relevant when the globstar types can be safely coalesced into a
-single set.
+## Nightly releases
 
-For example, `*(a|@(b|c)|d)` would be flattened into
-`*(a|b|c|d)`. Thus, many common extglobs will retain good
-performance and never hit this limit, even if they are
-excessively deep and complicated.
+If you need to test with a change from the latest `main` branch, our `mongodb` npm package has nightly versions released under the `nightly` tag.
 
-If the limit is hit, then the extglob characters are simply not
-parsed, and the pattern effectively switches into `noextglob:
-true` mode for the contents of that nested sub-pattern. This will
-typically _not_ result in a match, but is considered a valid
-trade-off for security and performance.
+```sh
+npm install mongodb@nightly
+```
 
-## Comparisons to other fnmatch/glob implementations
+Nightly versions are published regardless of testing outcome.
+This means there could be semantic breakages or partially implemented features.
+The nightly build is not suitable for production use.
 
-While strict compliance with the existing standards is a
-worthwhile goal, some discrepancies exist between minimatch and
-other implementations. Some are intentional, and some are
-unavoidable.
+## Next Steps
 
-If the pattern starts with a `!` character, then it is negated. Set the
-`nonegate` flag to suppress this behavior, and treat leading `!`
-characters normally. This is perhaps relevant if you wish to start the
-pattern with a negative extglob pattern like `!(a|B)`. Multiple `!`
-characters at the start of a pattern will negate the pattern multiple
-times.
+- [MongoDB Documentation](https://www.mongodb.com/docs/manual/)
+- [MongoDB Node Driver Documentation](https://www.mongodb.com/docs/drivers/node/)
+- [Read about Schemas](https://www.mongodb.com/docs/manual/core/data-modeling-introduction/)
+- [Star us on GitHub](https://github.com/mongodb/node-mongodb-native)
 
-If a pattern starts with `#`, then it is treated as a comment, and
-will not match anything. Use `\#` to match a literal `#` at the
-start of a line, or set the `nocomment` flag to suppress this behavior.
+## License
 
-The double-star character `**` is supported by default, unless the
-`noglobstar` flag is set. This is supported in the manner of bsdglob
-and bash 4.1, where `**` only has special significance if it is the only
-thing in a path part. That is, `a/**/b` will match `a/x/y/b`, but
-`a/**b` will not.
+[Apache 2.0](LICENSE.md)
 
-If an escaped pattern has no matches, and the `nonull` flag is set,
-then minimatch.match returns the pattern as-provided, rather than
-interpreting the character escapes. For example,
-`minimatch.match([], "\\*a\\?")` will return `"\\*a\\?"` rather than
-`"*a?"`. This is akin to setting the `nullglob` option in bash, except
-that it does not resolve escaped pattern characters.
-
-If brace expansion is not disabled, then it is performed before any
-other interpretation of the glob pattern. Thus, a pattern like
-`+(a|{b),c)}`, which would not be valid in bash or zsh, is expanded
-**first** into the set of `+(a|b)` and `+(a|c)`, and those patterns are
-checked for validity. Since those two are valid, matching proceeds.
-
-Negated extglob patterns are handled as closely as possible to
-Bash semantics, but there are some cases with negative extglobs
-which are exceedingly difficult to express in a JavaScript
-regular expression. In particular the negated pattern
-`<start>!(<pattern>*|)*` will in bash match anything that does
-not start with `<start><pattern>`. However,
-`<start>!(<pattern>*)*` _will_ match paths starting with
-`<start><pattern>`, because the empty string can match against
-the negated portion. In this library, `<start>!(<pattern>*|)*`
-will _not_ match any pattern starting with `<start>`, due to a
-difference in precisely which patterns are considered "greedy" in
-Regular Expressions vs bash path expansion. This may be fixable,
-but not without incurring some complexity and performance costs,
-and the trade-off seems to not be worth pursuing.
-
-Note that `fnmatch(3)` in libc is an extremely naive string comparison
-matcher, which does not do anything special for slashes. This library is
-designed to be used in glob searching and file walkers, and so it does do
-special things with `/`. Thus, `foo*` will not match `foo/bar` in this
-library, even though it would in `fnmatch(3)`.
+© 2012-present MongoDB [Contributors](https://github.com/mongodb/node-mongodb-native/blob/HEAD/CONTRIBUTORS.md) \
+© 2009-2012 Christian Amor Kvalheim
