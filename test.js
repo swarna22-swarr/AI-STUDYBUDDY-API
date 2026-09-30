@@ -1,80 +1,60 @@
-var tape = require('tape')
-var pager = require('./')
+/**
+ * Usage: node test.js
+ */
 
-tape('get page', function (t) {
-  var pages = pager(1024)
+var mime = require('../mime');
+var assert = require('assert');
+var path = require('path');
 
-  var page = pages.get(0)
+//
+// Test mime lookups
+//
 
-  t.same(page.offset, 0)
-  t.same(page.buffer, Buffer.alloc(1024))
-  t.end()
-})
+assert.equal('text/plain', mime.lookup('text.txt'));     // normal file
+assert.equal('text/plain', mime.lookup('TEXT.TXT'));     // uppercase
+assert.equal('text/plain', mime.lookup('dir/text.txt')); // dir + file
+assert.equal('text/plain', mime.lookup('.text.txt'));    // hidden file
+assert.equal('text/plain', mime.lookup('.txt'));         // nameless
+assert.equal('text/plain', mime.lookup('txt'));          // extension-only
+assert.equal('text/plain', mime.lookup('/txt'));         // extension-less ()
+assert.equal('text/plain', mime.lookup('\\txt'));        // Windows, extension-less
+assert.equal('application/octet-stream', mime.lookup('text.nope')); // unrecognized
+assert.equal('fallback', mime.lookup('text.fallback', 'fallback')); // alternate default
 
-tape('get page twice', function (t) {
-  var pages = pager(1024)
-  t.same(pages.length, 0)
+//
+// Test extensions
+//
 
-  var page = pages.get(0)
+assert.equal('txt', mime.extension(mime.types.text));
+assert.equal('html', mime.extension(mime.types.htm));
+assert.equal('bin', mime.extension('application/octet-stream'));
+assert.equal('bin', mime.extension('application/octet-stream '));
+assert.equal('html', mime.extension(' text/html; charset=UTF-8'));
+assert.equal('html', mime.extension('text/html; charset=UTF-8 '));
+assert.equal('html', mime.extension('text/html; charset=UTF-8'));
+assert.equal('html', mime.extension('text/html ; charset=UTF-8'));
+assert.equal('html', mime.extension('text/html;charset=UTF-8'));
+assert.equal('html', mime.extension('text/Html;charset=UTF-8'));
+assert.equal(undefined, mime.extension('unrecognized'));
 
-  t.same(page.offset, 0)
-  t.same(page.buffer, Buffer.alloc(1024))
-  t.same(pages.length, 1)
+//
+// Test node.types lookups
+//
 
-  var other = pages.get(0)
+assert.equal('font/woff', mime.lookup('file.woff'));
+assert.equal('application/octet-stream', mime.lookup('file.buffer'));
+// TODO: Uncomment once #157 is resolved
+// assert.equal('audio/mp4', mime.lookup('file.m4a'));
+assert.equal('font/otf', mime.lookup('file.otf'));
 
-  t.same(other, page)
-  t.end()
-})
+//
+// Test charsets
+//
 
-tape('get no mutable page', function (t) {
-  var pages = pager(1024)
+assert.equal('UTF-8', mime.charsets.lookup('text/plain'));
+assert.equal('UTF-8', mime.charsets.lookup(mime.types.js));
+assert.equal('UTF-8', mime.charsets.lookup(mime.types.json));
+assert.equal(undefined, mime.charsets.lookup(mime.types.bin));
+assert.equal('fallback', mime.charsets.lookup('application/octet-stream', 'fallback'));
 
-  t.ok(!pages.get(141, true))
-  t.ok(pages.get(141))
-  t.ok(pages.get(141, true))
-
-  t.end()
-})
-
-tape('get far out page', function (t) {
-  var pages = pager(1024)
-
-  var page = pages.get(1000000)
-
-  t.same(page.offset, 1000000 * 1024)
-  t.same(page.buffer, Buffer.alloc(1024))
-  t.same(pages.length, 1000000 + 1)
-
-  var other = pages.get(1)
-
-  t.same(other.offset, 1024)
-  t.same(other.buffer, Buffer.alloc(1024))
-  t.same(pages.length, 1000000 + 1)
-  t.ok(other !== page)
-
-  t.end()
-})
-
-tape('updates', function (t) {
-  var pages = pager(1024)
-
-  t.same(pages.lastUpdate(), null)
-
-  var page = pages.get(10)
-
-  page.buffer[42] = 1
-  pages.updated(page)
-
-  t.same(pages.lastUpdate(), page)
-  t.same(pages.lastUpdate(), null)
-
-  page.buffer[42] = 2
-  pages.updated(page)
-  pages.updated(page)
-
-  t.same(pages.lastUpdate(), page)
-  t.same(pages.lastUpdate(), null)
-
-  t.end()
-})
+console.log('\nAll tests passed');
