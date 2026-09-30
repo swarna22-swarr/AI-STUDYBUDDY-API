@@ -1,28 +1,17 @@
 {
-  "name": "kareem",
-  "version": "3.3.0",
-  "description": "Next-generation take on pre/post function hooks",
-  "main": "index.js",
-  "scripts": {
-    "lint": "eslint .",
-    "test": "mocha ./test/*",
-    "test-coverage": "nyc --reporter lcov mocha ./test/*",
-    "docs": "node ./docs.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/mongoosejs/kareem.git"
-  },
-  "devDependencies": {
-    "acquit": "1.x",
-    "acquit-ignore": "0.2.x",
-    "eslint": "8.20.0",
-    "mocha": "11.x",
-    "nyc": "15.1.0"
-  },
-  "author": "Valeri Karpov <val@karpov.io>",
-  "license": "Apache-2.0",
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "name": "lodash.includes",
+  "version": "4.3.0",
+  "description": "The lodash method `_.includes` exported as a module.",
+  "homepage": "https://lodash.com/",
+  "icon": "https://lodash.com/icon.svg",
+  "license": "MIT",
+  "keywords": "lodash-modularized, includes",
+  "author": "John-David Dalton <john.david.dalton@gmail.com> (http://allyoucanleet.com/)",
+  "contributors": [
+    "John-David Dalton <john.david.dalton@gmail.com> (http://allyoucanleet.com/)",
+    "Blaine Bublitz <blaine.bublitz@gmail.com> (https://github.com/phated)",
+    "Mathias Bynens <mathias@qiwi.be> (https://mathiasbynens.be/)"
+  ],
+  "repository": "lodash/lodash",
+  "scripts": { "test": "echo \"See https://travis-ci.org/lodash/lodash-cli for testing details.\"" }
 }
