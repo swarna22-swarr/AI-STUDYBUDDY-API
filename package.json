@@ -1,26 +1,24 @@
 {
-  "name": "media-typer",
-  "description": "Simple RFC 6838 media type parser and formatter",
-  "version": "0.3.0",
-  "author": "Douglas Christopher Wilson <doug@somethingdoug.com>",
-  "license": "MIT",
-  "repository": "jshttp/media-typer",
+  "name": "memory-pager",
+  "version": "1.5.0",
+  "description": "Access memory using small fixed sized buffers",
+  "main": "index.js",
+  "dependencies": {},
   "devDependencies": {
-    "istanbul": "0.3.2",
-    "mocha": "~1.21.4",
-    "should": "~4.0.4"
-  },
-  "files": [
-    "LICENSE",
-    "HISTORY.md",
-    "index.js"
-  ],
-  "engines": {
-    "node": ">= 0.6"
+    "standard": "^9.0.0",
+    "tape": "^4.6.3"
   },
   "scripts": {
-    "test": "mocha --reporter spec --check-leaks --bail test/",
-    "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot --check-leaks test/",
-    "test-travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- --reporter spec --check-leaks test/"
-  }
+    "test": "standard && tape test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mafintosh/memory-pager.git"
+  },
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mafintosh/memory-pager/issues"
+  },
+  "homepage": "https://github.com/mafintosh/memory-pager"
 }

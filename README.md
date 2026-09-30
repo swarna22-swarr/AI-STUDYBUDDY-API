@@ -1,81 +1,65 @@
-# media-typer
+# memory-pager
 
-[![NPM Version][npm-image]][npm-url]
-[![NPM Downloads][downloads-image]][downloads-url]
-[![Node.js Version][node-version-image]][node-version-url]
-[![Build Status][travis-image]][travis-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+Access memory using small fixed sized buffers instead of allocating a huge buffer.
+Useful if you are implementing sparse data structures (such as large bitfield).
 
-Simple RFC 6838 media type parser
+![travis](https://travis-ci.org/mafintosh/memory-pager.svg?branch=master)
 
-## Installation
+```
+npm install memory-pager
+```
 
-```sh
-$ npm install media-typer
+## Usage
+
+``` js
+var pager = require('paged-memory')
+
+var pages = pager(1024) // use 1kb per page
+
+var page = pages.get(10) // get page #10
+
+console.log(page.offset) // 10240
+console.log(page.buffer) // a blank 1kb buffer
 ```
 
 ## API
 
-```js
-var typer = require('media-typer')
+#### `var pages = pager(pageSize)`
+
+Create a new pager. `pageSize` defaults to `1024`.
+
+#### `var page = pages.get(pageNumber, [noAllocate])`
+
+Get a page. The page will be allocated at first access.
+
+Optionally you can set the `noAllocate` flag which will make the
+method return undefined if no page has been allocated already
+
+A page looks like this
+
+``` js
+{
+  offset: byteOffset,
+  buffer: bufferWithPageSize
+}
 ```
 
-### typer.parse(string)
+#### `pages.set(pageNumber, buffer)`
 
-```js
-var obj = typer.parse('image/svg+xml; charset=utf-8')
-```
+Explicitly set the buffer for a page.
 
-Parse a media type string. This will return an object with the following
-properties (examples are shown for the string `'image/svg+xml; charset=utf-8'`):
+#### `pages.updated(page)`
 
- - `type`: The type of the media type (always lower case). Example: `'image'`
+Mark a page as updated.
 
- - `subtype`: The subtype of the media type (always lower case). Example: `'svg'`
+#### `pages.lastUpdate()`
 
- - `suffix`: The suffix of the media type (always lower case). Example: `'xml'`
+Get the last page that was updated.
 
- - `parameters`: An object of the parameters in the media type (name of parameter always lower case). Example: `{charset: 'utf-8'}`
+#### `var buf = pages.toBuffer()`
 
-### typer.parse(req)
-
-```js
-var obj = typer.parse(req)
-```
-
-Parse the `content-type` header from the given `req`. Short-cut for
-`typer.parse(req.headers['content-type'])`.
-
-### typer.parse(res)
-
-```js
-var obj = typer.parse(res)
-```
-
-Parse the `content-type` header set on the given `res`. Short-cut for
-`typer.parse(res.getHeader('content-type'))`.
-
-### typer.format(obj)
-
-```js
-var obj = typer.format({type: 'image', subtype: 'svg', suffix: 'xml'})
-```
-
-Format an object into a media type string. This will return a string of the
-mime type for the given object. For the properties of the object, see the
-documentation for `typer.parse(string)`.
+Concat all pages allocated pages into a single buffer
 
 ## License
 
-[MIT](LICENSE)
-
-[npm-image]: https://img.shields.io/npm/v/media-typer.svg?style=flat
-[npm-url]: https://npmjs.org/package/media-typer
-[node-version-image]: https://img.shields.io/badge/node.js-%3E%3D_0.6-brightgreen.svg?style=flat
-[node-version-url]: http://nodejs.org/download/
-[travis-image]: https://img.shields.io/travis/jshttp/media-typer.svg?style=flat
-[travis-url]: https://travis-ci.org/jshttp/media-typer
-[coveralls-image]: https://img.shields.io/coveralls/jshttp/media-typer.svg?style=flat
-[coveralls-url]: https://coveralls.io/r/jshttp/media-typer
-[downloads-image]: https://img.shields.io/npm/dm/media-typer.svg?style=flat
-[downloads-url]: https://npmjs.org/package/media-typer
+MIT

@@ -1,270 +1,160 @@
-/*!
- * media-typer
- * Copyright(c) 2014 Douglas Christopher Wilson
- * MIT Licensed
- */
+module.exports = Pager
 
-/**
- * RegExp to match *( ";" parameter ) in RFC 2616 sec 3.7
- *
- * parameter     = token "=" ( token | quoted-string )
- * token         = 1*<any CHAR except CTLs or separators>
- * separators    = "(" | ")" | "<" | ">" | "@"
- *               | "," | ";" | ":" | "\" | <">
- *               | "/" | "[" | "]" | "?" | "="
- *               | "{" | "}" | SP | HT
- * quoted-string = ( <"> *(qdtext | quoted-pair ) <"> )
- * qdtext        = <any TEXT except <">>
- * quoted-pair   = "\" CHAR
- * CHAR          = <any US-ASCII character (octets 0 - 127)>
- * TEXT          = <any OCTET except CTLs, but including LWS>
- * LWS           = [CRLF] 1*( SP | HT )
- * CRLF          = CR LF
- * CR            = <US-ASCII CR, carriage return (13)>
- * LF            = <US-ASCII LF, linefeed (10)>
- * SP            = <US-ASCII SP, space (32)>
- * SHT           = <US-ASCII HT, horizontal-tab (9)>
- * CTL           = <any US-ASCII control character (octets 0 - 31) and DEL (127)>
- * OCTET         = <any 8-bit sequence of data>
- */
-var paramRegExp = /; *([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *= *("(?:[ !\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u0020-\u007e])*"|[!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) */g;
-var textRegExp = /^[\u0020-\u007e\u0080-\u00ff]+$/
-var tokenRegExp = /^[!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+$/
+function Pager (pageSize, opts) {
+  if (!(this instanceof Pager)) return new Pager(pageSize, opts)
 
-/**
- * RegExp to match quoted-pair in RFC 2616
- *
- * quoted-pair = "\" CHAR
- * CHAR        = <any US-ASCII character (octets 0 - 127)>
- */
-var qescRegExp = /\\([\u0000-\u007f])/g;
+  this.length = 0
+  this.updates = []
+  this.path = new Uint16Array(4)
+  this.pages = new Array(32768)
+  this.maxPages = this.pages.length
+  this.level = 0
+  this.pageSize = pageSize || 1024
+  this.deduplicate = opts ? opts.deduplicate : null
+  this.zeros = this.deduplicate ? alloc(this.deduplicate.length) : null
+}
 
-/**
- * RegExp to match chars that must be quoted-pair in RFC 2616
- */
-var quoteRegExp = /([\\"])/g;
+Pager.prototype.updated = function (page) {
+  while (this.deduplicate && page.buffer[page.deduplicate] === this.deduplicate[page.deduplicate]) {
+    page.deduplicate++
+    if (page.deduplicate === this.deduplicate.length) {
+      page.deduplicate = 0
+      if (page.buffer.equals && page.buffer.equals(this.deduplicate)) page.buffer = this.deduplicate
+      break
+    }
+  }
+  if (page.updated || !this.updates) return
+  page.updated = true
+  this.updates.push(page)
+}
 
-/**
- * RegExp to match type in RFC 6838
- *
- * type-name = restricted-name
- * subtype-name = restricted-name
- * restricted-name = restricted-name-first *126restricted-name-chars
- * restricted-name-first  = ALPHA / DIGIT
- * restricted-name-chars  = ALPHA / DIGIT / "!" / "#" /
- *                          "$" / "&" / "-" / "^" / "_"
- * restricted-name-chars =/ "." ; Characters before first dot always
- *                              ; specify a facet name
- * restricted-name-chars =/ "+" ; Characters after last plus always
- *                              ; specify a structured syntax suffix
- * ALPHA =  %x41-5A / %x61-7A   ; A-Z / a-z
- * DIGIT =  %x30-39             ; 0-9
- */
-var subtypeNameRegExp = /^[A-Za-z0-9][A-Za-z0-9!#$&^_.-]{0,126}$/
-var typeNameRegExp = /^[A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126}$/
-var typeRegExp = /^ *([A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126})\/([A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}) *$/;
+Pager.prototype.lastUpdate = function () {
+  if (!this.updates || !this.updates.length) return null
+  var page = this.updates.pop()
+  page.updated = false
+  return page
+}
 
-/**
- * Module exports.
- */
-
-exports.format = format
-exports.parse = parse
-
-/**
- * Format object to media type.
- *
- * @param {object} obj
- * @return {string}
- * @api public
- */
-
-function format(obj) {
-  if (!obj || typeof obj !== 'object') {
-    throw new TypeError('argument obj is required')
+Pager.prototype._array = function (i, noAllocate) {
+  if (i >= this.maxPages) {
+    if (noAllocate) return
+    grow(this, i)
   }
 
-  var parameters = obj.parameters
-  var subtype = obj.subtype
-  var suffix = obj.suffix
-  var type = obj.type
+  factor(i, this.path)
 
-  if (!type || !typeNameRegExp.test(type)) {
-    throw new TypeError('invalid type')
-  }
+  var arr = this.pages
 
-  if (!subtype || !subtypeNameRegExp.test(subtype)) {
-    throw new TypeError('invalid subtype')
-  }
+  for (var j = this.level; j > 0; j--) {
+    var p = this.path[j]
+    var next = arr[p]
 
-  // format as type/subtype
-  var string = type + '/' + subtype
-
-  // append +suffix
-  if (suffix) {
-    if (!typeNameRegExp.test(suffix)) {
-      throw new TypeError('invalid suffix')
+    if (!next) {
+      if (noAllocate) return
+      next = arr[p] = new Array(32768)
     }
 
-    string += '+' + suffix
+    arr = next
   }
 
-  // append parameters
-  if (parameters && typeof parameters === 'object') {
-    var param
-    var params = Object.keys(parameters).sort()
+  return arr
+}
 
-    for (var i = 0; i < params.length; i++) {
-      param = params[i]
+Pager.prototype.get = function (i, noAllocate) {
+  var arr = this._array(i, noAllocate)
+  var first = this.path[0]
+  var page = arr && arr[first]
 
-      if (!tokenRegExp.test(param)) {
-        throw new TypeError('invalid parameter name')
-      }
+  if (!page && !noAllocate) {
+    page = arr[first] = new Page(i, alloc(this.pageSize))
+    if (i >= this.length) this.length = i + 1
+  }
 
-      string += '; ' + param + '=' + qstring(parameters[param])
+  if (page && page.buffer === this.deduplicate && this.deduplicate && !noAllocate) {
+    page.buffer = copy(page.buffer)
+    page.deduplicate = 0
+  }
+
+  return page
+}
+
+Pager.prototype.set = function (i, buf) {
+  var arr = this._array(i, false)
+  var first = this.path[0]
+
+  if (i >= this.length) this.length = i + 1
+
+  if (!buf || (this.zeros && buf.equals && buf.equals(this.zeros))) {
+    arr[first] = undefined
+    return
+  }
+
+  if (this.deduplicate && buf.equals && buf.equals(this.deduplicate)) {
+    buf = this.deduplicate
+  }
+
+  var page = arr[first]
+  var b = truncate(buf, this.pageSize)
+
+  if (page) page.buffer = b
+  else arr[first] = new Page(i, b)
+}
+
+Pager.prototype.toBuffer = function () {
+  var list = new Array(this.length)
+  var empty = alloc(this.pageSize)
+  var ptr = 0
+
+  while (ptr < list.length) {
+    var arr = this._array(ptr, true)
+    for (var i = 0; i < 32768 && ptr < list.length; i++) {
+      list[ptr++] = (arr && arr[i]) ? arr[i].buffer : empty
     }
   }
 
-  return string
+  return Buffer.concat(list)
 }
 
-/**
- * Parse media type to object.
- *
- * @param {string|object} string
- * @return {Object}
- * @api public
- */
-
-function parse(string) {
-  if (!string) {
-    throw new TypeError('argument string is required')
-  }
-
-  // support req/res-like objects as argument
-  if (typeof string === 'object') {
-    string = getcontenttype(string)
-  }
-
-  if (typeof string !== 'string') {
-    throw new TypeError('argument string is required to be a string')
-  }
-
-  var index = string.indexOf(';')
-  var type = index !== -1
-    ? string.substr(0, index)
-    : string
-
-  var key
-  var match
-  var obj = splitType(type)
-  var params = {}
-  var value
-
-  paramRegExp.lastIndex = index
-
-  while (match = paramRegExp.exec(string)) {
-    if (match.index !== index) {
-      throw new TypeError('invalid parameter format')
-    }
-
-    index += match[0].length
-    key = match[1].toLowerCase()
-    value = match[2]
-
-    if (value[0] === '"') {
-      // remove quotes and escapes
-      value = value
-        .substr(1, value.length - 2)
-        .replace(qescRegExp, '$1')
-    }
-
-    params[key] = value
-  }
-
-  if (index !== -1 && index !== string.length) {
-    throw new TypeError('invalid parameter format')
-  }
-
-  obj.parameters = params
-
-  return obj
-}
-
-/**
- * Get content-type from req/res objects.
- *
- * @param {object}
- * @return {Object}
- * @api private
- */
-
-function getcontenttype(obj) {
-  if (typeof obj.getHeader === 'function') {
-    // res-like
-    return obj.getHeader('content-type')
-  }
-
-  if (typeof obj.headers === 'object') {
-    // req-like
-    return obj.headers && obj.headers['content-type']
+function grow (pager, index) {
+  while (pager.maxPages < index) {
+    var old = pager.pages
+    pager.pages = new Array(32768)
+    pager.pages[0] = old
+    pager.level++
+    pager.maxPages *= 32768
   }
 }
 
-/**
- * Quote a string if necessary.
- *
- * @param {string} val
- * @return {string}
- * @api private
- */
-
-function qstring(val) {
-  var str = String(val)
-
-  // no need to quote tokens
-  if (tokenRegExp.test(str)) {
-    return str
-  }
-
-  if (str.length > 0 && !textRegExp.test(str)) {
-    throw new TypeError('invalid parameter value')
-  }
-
-  return '"' + str.replace(quoteRegExp, '\\$1') + '"'
+function truncate (buf, len) {
+  if (buf.length === len) return buf
+  if (buf.length > len) return buf.slice(0, len)
+  var cpy = alloc(len)
+  buf.copy(cpy)
+  return cpy
 }
 
-/**
- * Simply "type/subtype+siffx" into parts.
- *
- * @param {string} string
- * @return {Object}
- * @api private
- */
+function alloc (size) {
+  if (Buffer.alloc) return Buffer.alloc(size)
+  var buf = new Buffer(size)
+  buf.fill(0)
+  return buf
+}
 
-function splitType(string) {
-  var match = typeRegExp.exec(string.toLowerCase())
+function copy (buf) {
+  var cpy = Buffer.allocUnsafe ? Buffer.allocUnsafe(buf.length) : new Buffer(buf.length)
+  buf.copy(cpy)
+  return cpy
+}
 
-  if (!match) {
-    throw new TypeError('invalid media type')
-  }
+function Page (i, buf) {
+  this.offset = i * buf.length
+  this.buffer = buf
+  this.updated = false
+  this.deduplicate = 0
+}
 
-  var type = match[1]
-  var subtype = match[2]
-  var suffix
-
-  // suffix after last +
-  var index = subtype.lastIndexOf('+')
-  if (index !== -1) {
-    suffix = subtype.substr(index + 1)
-    subtype = subtype.substr(0, index)
-  }
-
-  var obj = {
-    type: type,
-    subtype: subtype,
-    suffix: suffix
-  }
-
-  return obj
+function factor (n, out) {
+  n = (n - (out[0] = (n & 32767))) / 32768
+  n = (n - (out[1] = (n & 32767))) / 32768
+  out[3] = ((n - (out[2] = (n & 32767))) / 32768) & 32767
 }
