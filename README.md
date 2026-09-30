@@ -1,65 +1,49 @@
-# memory-pager
+# merge-descriptors
 
-Access memory using small fixed sized buffers instead of allocating a huge buffer.
-Useful if you are implementing sparse data structures (such as large bitfield).
+[![NPM Version][npm-image]][npm-url]
+[![NPM Downloads][downloads-image]][downloads-url]
+[![Build Status][travis-image]][travis-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
 
-![travis](https://travis-ci.org/mafintosh/memory-pager.svg?branch=master)
+Merge objects using descriptors.
 
-```
-npm install memory-pager
-```
+```js
+var thing = {
+  get name() {
+    return 'jon'
+  }
+}
 
-## Usage
+var animal = {
 
-``` js
-var pager = require('paged-memory')
+}
 
-var pages = pager(1024) // use 1kb per page
+merge(animal, thing)
 
-var page = pages.get(10) // get page #10
-
-console.log(page.offset) // 10240
-console.log(page.buffer) // a blank 1kb buffer
+animal.name === 'jon'
 ```
 
 ## API
 
-#### `var pages = pager(pageSize)`
+### merge(destination, source)
 
-Create a new pager. `pageSize` defaults to `1024`.
+Redefines `destination`'s descriptors with `source`'s. The return value is the
+`destination` object.
 
-#### `var page = pages.get(pageNumber, [noAllocate])`
+### merge(destination, source, false)
 
-Get a page. The page will be allocated at first access.
-
-Optionally you can set the `noAllocate` flag which will make the
-method return undefined if no page has been allocated already
-
-A page looks like this
-
-``` js
-{
-  offset: byteOffset,
-  buffer: bufferWithPageSize
-}
-```
-
-#### `pages.set(pageNumber, buffer)`
-
-Explicitly set the buffer for a page.
-
-#### `pages.updated(page)`
-
-Mark a page as updated.
-
-#### `pages.lastUpdate()`
-
-Get the last page that was updated.
-
-#### `var buf = pages.toBuffer()`
-
-Concat all pages allocated pages into a single buffer
+Defines `source`'s descriptors on `destination` if `destination` does not have
+a descriptor by the same name. The return value is the `destination` object.
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+[npm-image]: https://img.shields.io/npm/v/merge-descriptors.svg
+[npm-url]: https://npmjs.org/package/merge-descriptors
+[travis-image]: https://img.shields.io/travis/component/merge-descriptors/master.svg
+[travis-url]: https://travis-ci.org/component/merge-descriptors
+[coveralls-image]: https://img.shields.io/coveralls/component/merge-descriptors/master.svg
+[coveralls-url]: https://coveralls.io/r/component/merge-descriptors?branch=master
+[downloads-image]: https://img.shields.io/npm/dm/merge-descriptors.svg
+[downloads-url]: https://npmjs.org/package/merge-descriptors
